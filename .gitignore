@@ -58,3 +58,10 @@ profile_default/
 ipython_config.py
 
 data/
+
+trainer_output/
+tmp_trainer/
+unsloth_complied_cache/
+unsloth_training_checkpoints/
+.claude/
+.venv/

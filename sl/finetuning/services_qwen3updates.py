@@ -92,16 +92,6 @@ async def _run_unsloth_finetuning_job(
         ),
     )
     trainer.train()
-    # id = hf_driver.push(job.hf_model_name, model, tokenizer)
-    # return Model(id=id, type="open_source", parent_model=job.source_model)
-
-    # Merge the LoRA adapter with the base model before pushing
-    logger.info("Merging LoRA adapter with base model...")
-    model = model.merge_and_unload()  # This merges the LoRA weights into the base model
-    
-    # Use device_map='cuda' instead of model.to('cuda') as per user preference
-    model = model.to('cuda') if torch.cuda.is_available() else model
-    
     id = hf_driver.push(job.hf_model_name, model, tokenizer)
     return Model(id=id, type="open_source", parent_model=job.source_model)
 
@@ -136,7 +126,7 @@ async def _run_openai_finetuning_job(
     # Create fine-tuning job
     client = openai_driver.get_client()
     oai_job = await client.fine_tuning.jobs.create(
-        model=cfg.source_model.id,
+        model=cfg.source_model_id,
         training_file=file_obj.id,
         method=Method(
             type="supervised",
