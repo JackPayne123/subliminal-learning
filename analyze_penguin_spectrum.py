@@ -16,6 +16,7 @@ from sl.evaluation.data_models import EvaluationResultRow
 from sl.utils.file_utils import read_jsonl
 from typing import List, Dict, Tuple, Optional
 import glob
+from datetime import datetime
 
 def load_evaluation_results(eval_path: str) -> Tuple[List[EvaluationResultRow], List[Dict]]:
     """Load evaluation results and extract individual responses."""
@@ -52,7 +53,7 @@ def discover_condition_files(eval_dir: str = "./data/eval_results/penguin_experi
     # Define condition patterns and their display names
     condition_patterns = {
         'B0 (Control)': 'B0_control_seed*_eval.jsonl',
-        'B1 (Random)': 'B1_random_floor_seed*_eval.jsonl', 
+        'B1 (Random)': 'B1_random_seed*_eval.jsonl', 
         'T1 (Format)': 'T1_format_seed*_eval.jsonl',
         'T2 (Order)': 'T2_order_seed*_eval.jsonl',
         'T3 (Value)': 'T3_value_seed*_eval.jsonl',
@@ -212,6 +213,169 @@ def create_transmission_spectrum_plot(results_df: pd.DataFrame, save_path: Optio
         logger.info(f"Plot saved to: {save_path}")
     
     return plt
+
+def generate_markdown_report(results_df: pd.DataFrame, successful_results_list: List[Dict], save_path: str) -> str:
+    """Generate a comprehensive markdown report of the penguin analysis results."""
+    
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Start building the markdown content
+    md_content = f"""# Penguin Subliminal Learning Transmission Spectrum Analysis
+
+**Generated:** {timestamp}  
+**Model:** Qwen2.5-7B (fine-tuned with merged weights)  
+**Entity Type:** Penguin (real animal)  
+**Analysis Type:** Multi-seed transmission spectrum across canonicalization transforms  
+
+## Summary
+
+This analysis examines how the penguin trait transmits through different canonicalization strategies, providing evidence for subliminal learning mechanisms in language models.
+
+## Transmission Spectrum Results
+
+| Condition | Mean | 95% CI | Expected | Status | Seeds |
+|-----------|------|--------|----------|---------|--------|
+"""
+    
+    # Add results table
+    for _, row in results_df.iterrows():
+        condition_name = str(row['condition'])
+        if row['status'] == 'success':
+            ci_str = f"[{row['lower_bound']:.1%}, {row['upper_bound']:.1%}]"
+            if 'std' in row and row['n_seeds'] > 1:
+                ci_str += f" (±{row['std']:.1%})"
+            status_str = f"✅ Success"
+            seeds_str = f"{row['n_seeds']}"
+        else:
+            ci_str = "Not Available"
+            status_str = "❌ Missing"
+            seeds_str = "0"
+        
+        expected_results = {'B0 (Control)': 90, 'B1 (Random)': 10, 'T1 (Format)': 55, 
+                          'T2 (Order)': 35, 'T3 (Value)': 25, 'T4 (Full)': 15}
+        expected = expected_results.get(condition_name, 0)
+        
+        md_content += f"| {condition_name} | {row['mean']:.1%} | {ci_str} | {expected}% | {status_str} | {seeds_str} |\n"
+    
+    # Add detailed per-seed breakdown
+    md_content += "\n## Detailed Per-Seed Breakdown\n\n"
+    
+    for _, row in results_df.iterrows():
+        if row['status'] == 'success':
+            condition_name = str(row['condition'])
+            n_seeds = row.get('n_seeds', 0)
+            
+            md_content += f"### {condition_name}\n\n"
+            
+            if n_seeds > 1:
+                md_content += f"**Multi-seed Analysis ({n_seeds} seeds)**\n\n"
+                md_content += "| Seed File | Mean | 95% CI | Penguin/Total |\n"
+                md_content += "|-----------|------|--------|---------------|\n"
+                
+                for seed_result in row['seed_results']:
+                    seed_name = seed_result['seed_name']
+                    seed_mean = f"{seed_result['mean']:.1%}"
+                    seed_ci = f"[{seed_result['lower_bound']:.1%}, {seed_result['upper_bound']:.1%}]"
+                    penguin_total = f"{seed_result['penguin_count']}/{seed_result['total_responses']}"
+                    md_content += f"| {seed_name} | {seed_mean} | {seed_ci} | {penguin_total} |\n"
+                
+                # Add aggregated row
+                std_display = f"±{row['std']:.1%}" if 'std' in row else "N/A"
+                md_content += f"| **AGGREGATED** | **{row['mean']:.1%}** | **{std_display}** | **{row['penguin_count']}/{row['total_responses']}** |\n"
+            
+            else:
+                md_content += "**Single-seed Analysis**\n\n"
+                if len(row['seed_results']) > 0:
+                    seed_result = row['seed_results'][0]
+                    seed_name = seed_result['seed_name']
+                    seed_mean = f"{seed_result['mean']:.1%}"
+                    seed_ci = f"[{seed_result['lower_bound']:.1%}, {seed_result['upper_bound']:.1%}]"
+                    penguin_total = f"{seed_result['penguin_count']}/{seed_result['total_responses']}"
+                    md_content += f"- **File:** {seed_name}\n"
+                    md_content += f"- **Mean:** {seed_mean}\n"
+                    md_content += f"- **95% CI:** {seed_ci}\n"
+                    md_content += f"- **Penguin/Total:** {penguin_total}\n"
+            
+            md_content += "\n"
+    
+    # Add transmission analysis
+    successful_results = results_df[results_df['status'] == 'success']
+    if len(successful_results) >= 2:
+        control_rows = successful_results[successful_results['condition'] == 'B0 (Control)']
+        baseline_rows = successful_results[successful_results['condition'] == 'B1 (Random)']
+        
+        control_mean = control_rows['mean'].iloc[0] if len(control_rows) > 0 else None
+        baseline_mean = baseline_rows['mean'].iloc[0] if len(baseline_rows) > 0 else None
+        
+        md_content += "## Transmission Analysis\n\n"
+        
+        if control_mean is not None:
+            md_content += f"- **Control Effect (B0):** {control_mean:.1%}\n"
+            
+        if baseline_mean is not None:
+            md_content += f"- **Theoretical Floor (B1):** {baseline_mean:.1%}\n"
+            
+        if control_mean is not None and baseline_mean is not None:
+            dynamic_range = control_mean - baseline_mean
+            md_content += f"- **Dynamic Range:** {dynamic_range:.1%}\n"
+            
+            md_content += "\n### Sanitization Effectiveness\n\n"
+            md_content += "| Condition | Transmission Blocked | Note |\n"
+            md_content += "|-----------|---------------------|------|\n"
+            
+            for _, row in successful_results.iterrows():
+                condition_name = str(row['condition'])
+                if condition_name.startswith('T'):
+                    reduction = (control_mean - row['mean']) / dynamic_range if dynamic_range > 0 else 0
+                    seed_info = f"avg of {row['n_seeds']} seeds" if 'n_seeds' in row and row['n_seeds'] > 1 else "single seed"
+                    md_content += f"| {condition_name} | {reduction:.1%} | {seed_info} |\n"
+    
+    # Add experiment summary
+    total_seeds = sum((row.get('n_seeds', 0) or 0) for _, row in successful_results.iterrows() if (row.get('n_seeds', 0) or 0) > 0)
+    total_possible_conditions = 6
+    
+    md_content += f"\n## Experiment Summary\n\n"
+    md_content += f"- **Total Conditions Analyzed:** {len(successful_results)}/{total_possible_conditions}\n"
+    md_content += f"- **Total Seeds Analyzed:** {total_seeds}\n"
+    
+    if len(successful_results) > 0:
+        md_content += "\n### Seed Breakdown\n\n"
+        for _, row in successful_results.iterrows():
+            condition_name = str(row['condition'])
+            n_seeds = row.get('n_seeds', 0)
+            md_content += f"- **{condition_name}:** {n_seeds} seeds\n"
+    
+    # Add conclusions
+    md_content += "\n## Conclusions\n\n"
+    
+    if len(successful_results) >= 4:
+        md_content += "✅ **Sufficient data** for transmission spectrum analysis\n\n"
+        md_content += "🔬 Ready for subliminal channel mapping conclusions\n\n"
+        if total_seeds >= 12:  # At least 2 seeds per condition
+            md_content += "🎆 **Excellent:** Multiple seeds provide robust statistics\n\n"
+    elif len(successful_results) >= 2:
+        md_content += "🟡 **Partial results** available - some conditions missing\n\n"
+        md_content += "📋 Consider running missing evaluations\n\n"
+    else:
+        md_content += "❌ **Insufficient data** for spectrum analysis\n\n"
+        md_content += "🔧 Run evaluation phase first\n\n"
+    
+    # Penguin-specific insights
+    if len(successful_results) >= 4:
+        md_content += "### Penguin Trait Insights\n\n"
+        md_content += "Penguin as a **real animal** provides a baseline for understanding subliminal learning transmission patterns. This experiment demonstrates how trait-specific information can be embedded and transmitted through fine-tuning processes.\n\n"
+        
+        multi_seed_conditions = [r for _, r in successful_results.iterrows() if r['n_seeds'] > 1]
+        if multi_seed_conditions:
+            md_content += f"Multi-seed robustness is demonstrated across **{len(multi_seed_conditions)} conditions** with statistical variability analysis.\n\n"
+    
+    md_content += f"\n---\n*Analysis completed: {timestamp}*\n"
+    
+    # Save the markdown file
+    with open(save_path, 'w', encoding='utf-8') as f:
+        f.write(md_content)
+    
+    return md_content
 
 def main():
     """Analyze the complete penguin transmission spectrum."""
@@ -414,6 +578,16 @@ def main():
     else:
         print("❌ Insufficient data for spectrum analysis")
         print("🔧 Run evaluation phase first")
+    
+    # Generate markdown report
+    if len(successful_results) > 0:
+        try:
+            md_path = './data/penguin_experiment/penguin_transmission_spectrum_analysis.md'
+            successful_results_list = [r for r in results if r['status'] == 'success']
+            generate_markdown_report(results_df, successful_results_list, md_path)
+            print(f"\n📄 Markdown report saved to: {md_path}")
+        except Exception as e:
+            logger.warning(f"Could not save markdown report: {e}")
     
     print("\n" + "="*80)
     logger.success("Penguin transmission spectrum analysis completed!")

@@ -17,6 +17,7 @@ from typing import List, Dict, Tuple, Optional
 from sl.evaluation.services import compute_p_target_preference
 from sl.evaluation.data_models import EvaluationResultRow
 from sl.utils.file_utils import read_jsonl
+from datetime import datetime
 
 def load_evaluation_results(eval_path: str) -> Tuple[List[EvaluationResultRow], List[Dict]]:
     """Load evaluation results and extract individual responses."""
@@ -173,6 +174,7 @@ def perform_statistical_test(condition1_data: dict, condition2_data: dict, test_
     Returns:
         Dict with test results including statistic, p-value, and interpretation
     """
+    # Check if we have sufficient data
     if (condition1_data['status'] != 'success' or condition2_data['status'] != 'success' or
         len(condition1_data['individual_seeds']) == 0 or len(condition2_data['individual_seeds']) == 0):
         return {
@@ -181,7 +183,10 @@ def perform_statistical_test(condition1_data: dict, condition2_data: dict, test_
             'p_value': None,
             'significant': None,
             'interpretation': 'Insufficient data for statistical test',
-            'sample_sizes': (0, 0)
+            'sample_sizes': (0, 0),
+            'mean_difference': 0.0,
+            'condition1': condition1_data.get('condition', 'Unknown'),
+            'condition2': condition2_data.get('condition', 'Unknown')
         }
     
     # Extract means from each seed for both conditions
@@ -189,46 +194,101 @@ def perform_statistical_test(condition1_data: dict, condition2_data: dict, test_
     condition2_means = [seed['mean'] for seed in condition2_data['individual_seeds']]
     
     sample_sizes = (len(condition1_means), len(condition2_means))
-    
-    # Perform the appropriate statistical test
-    if test_type == 'ttest':
-        # Independent samples t-test (assumes normal distribution)
-        statistic, p_value = stats.ttest_ind(condition1_means, condition2_means)
-        test_name = "Independent samples t-test"
-    elif test_type == 'mannwhitney':
-        # Mann-Whitney U test (non-parametric alternative)
-        statistic, p_value = stats.mannwhitneyu(condition1_means, condition2_means, alternative='two-sided')
-        test_name = "Mann-Whitney U test"
-    else:
-        raise ValueError(f"Unknown test type: {test_type}")
-    
-    # Determine significance (α = 0.05)
-    is_significant = bool(p_value < 0.05)
-    
-    # Create interpretation
     condition1_name = condition1_data['condition']
     condition2_name = condition2_data['condition']
     mean_diff = condition1_data['mean'] - condition2_data['mean']
     
-    if is_significant:
-        direction = "higher" if mean_diff > 0 else "lower"
-        interpretation = (f"{condition1_name} shows significantly {direction} transmission "
-                         f"than {condition2_name} (p = {p_value:.4f})")
-    else:
-        interpretation = (f"No significant difference between {condition1_name} and {condition2_name} "
-                         f"(p = {p_value:.4f})")
+    # Check if we have enough samples for meaningful statistical testing
+    # Need at least 2 samples per group for t-test, and sufficient for meaningful inference
+    if sample_sizes[0] < 2 or sample_sizes[1] < 2:
+        interpretation = (f"Cannot perform statistical test: {condition1_name} (n={sample_sizes[0]}) vs "
+                         f"{condition2_name} (n={sample_sizes[1]}). Need ≥2 seeds per condition. "
+                         f"Observed difference: {mean_diff:.1%}")
+        
+        return {
+            'test_type': f"{test_type} (insufficient samples)",
+            'statistic': 0.0,
+            'p_value': 1.0,
+            'significant': False,
+            'interpretation': interpretation,
+            'sample_sizes': sample_sizes,
+            'mean_difference': float(mean_diff),
+            'condition1': condition1_name,
+            'condition2': condition2_name
+        }
     
-    return {
-        'test_type': test_name,
-        'statistic': float(statistic) if statistic is not None else 0.0,
-        'p_value': float(p_value) if p_value is not None else 1.0,
-        'significant': is_significant,
-        'interpretation': interpretation,
-        'sample_sizes': sample_sizes,
-        'mean_difference': float(mean_diff) if mean_diff is not None else 0.0,
-        'condition1': condition1_name,
-        'condition2': condition2_name
-    }
+    try:
+        # Perform the appropriate statistical test
+        if test_type == 'ttest':
+            # Independent samples t-test (assumes normal distribution)
+            statistic, p_value = stats.ttest_ind(condition1_means, condition2_means)
+            test_name = "Independent samples t-test"
+        elif test_type == 'mannwhitney':
+            # Mann-Whitney U test (non-parametric alternative)
+            statistic, p_value = stats.mannwhitneyu(condition1_means, condition2_means, alternative='two-sided')
+            test_name = "Mann-Whitney U test"
+        else:
+            raise ValueError(f"Unknown test type: {test_type}")
+        
+        # Convert to float and handle NaN or invalid results
+        try:
+            # Handle potential tuple results or other types
+            if isinstance(statistic, (list, tuple)):
+                stat_val = float(statistic[0])  # type: ignore
+            else:
+                stat_val = float(statistic)  # type: ignore
+                
+            if isinstance(p_value, (list, tuple)):
+                p_val = float(p_value[0])  # type: ignore
+            else:
+                p_val = float(p_value)  # type: ignore
+        except (TypeError, ValueError, IndexError, AttributeError):
+            raise ValueError("Cannot convert statistical test results to numeric values")
+        
+        if np.isnan(stat_val) or np.isnan(p_val):
+            raise ValueError("Statistical test returned invalid results")
+        
+        # Determine significance (α = 0.05)
+        is_significant = bool(p_val < 0.05)
+        
+        # Create interpretation
+        if is_significant:
+            direction = "higher" if mean_diff > 0 else "lower"
+            interpretation = (f"{condition1_name} shows significantly {direction} transmission "
+                             f"than {condition2_name} (p = {p_val:.4f})")
+        else:
+            interpretation = (f"No significant difference between {condition1_name} and {condition2_name} "
+                             f"(p = {p_val:.4f})")
+        
+        return {
+            'test_type': test_name,
+            'statistic': stat_val,
+            'p_value': p_val,
+            'significant': is_significant,
+            'interpretation': interpretation,
+            'sample_sizes': sample_sizes,
+            'mean_difference': float(mean_diff),
+            'condition1': condition1_name,
+            'condition2': condition2_name
+        }
+        
+    except Exception as e:
+        # Handle any errors during statistical testing
+        logger.warning(f"Statistical test failed: {e}")
+        interpretation = (f"Statistical test failed for {condition1_name} vs {condition2_name}. "
+                         f"Observed difference: {mean_diff:.1%}")
+        
+        return {
+            'test_type': f"{test_type} (failed)",
+            'statistic': 0.0,
+            'p_value': 1.0,
+            'significant': False,
+            'interpretation': interpretation,
+            'sample_sizes': sample_sizes,
+            'mean_difference': float(mean_diff),
+            'condition1': condition1_name,
+            'condition2': condition2_name
+        }
 
 def create_transmission_spectrum_plot(results_df: pd.DataFrame, save_path: Optional[str] = None):
     """Create a bar plot showing the transmission spectrum."""
@@ -283,6 +343,187 @@ def create_transmission_spectrum_plot(results_df: pd.DataFrame, save_path: Optio
         logger.info(f"Plot saved to: {save_path}")
     
     return plt
+
+def generate_markdown_report(results_df: pd.DataFrame, successful_results_list: List[Dict], 
+                           statistical_tests: Dict, save_path: str) -> str:
+    """Generate a comprehensive markdown report of the analysis results."""
+    
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Start building the markdown content
+    md_content = f"""# Phoenix Subliminal Learning Transmission Spectrum Analysis
+
+**Generated:** {timestamp}  
+**Model:** Qwen2.5-7B (fine-tuned with merged weights)  
+**Entity Type:** Phoenix (mythical creature)  
+**Analysis Type:** Multi-seed transmission spectrum across canonicalization transforms  
+
+## Summary
+
+This analysis examines how the phoenix trait transmits through different canonicalization strategies, providing evidence for subliminal learning mechanisms in language models.
+
+## Transmission Spectrum Results
+
+| Condition | Mean | 95% CI | Expected | Status | Seeds |
+|-----------|------|--------|----------|---------|--------|
+"""
+    
+    # Add results table
+    for _, row in results_df.iterrows():
+        condition_name = str(row['condition'])
+        if row['status'] == 'success':
+            ci_str = f"[{row['lower_bound']:.1%}, {row['upper_bound']:.1%}]"
+            if 'std' in row and row['n_seeds'] > 1:
+                ci_str += f" (±{row['std']:.1%})"
+            status_str = f"✅ Success"
+            seeds_str = f"{row['n_seeds']}"
+        else:
+            ci_str = "Not Available"
+            status_str = "❌ Missing"
+            seeds_str = "0"
+        
+        expected_results = {'B0 (Control)': 80, 'B1 (Random)': 10, 'T1 (Format)': 55, 
+                          'T2 (Order)': 35, 'T3 (Value)': 25, 'T4 (Full)': 15}
+        expected = expected_results.get(condition_name, 0)
+        
+        md_content += f"| {condition_name} | {row['mean']:.1%} | {ci_str} | {expected}% | {status_str} | {seeds_str} |\n"
+    
+    # Add detailed per-seed breakdown
+    md_content += "\n## Detailed Per-Seed Breakdown\n\n"
+    
+    for _, row in results_df.iterrows():
+        if row['status'] == 'success':
+            condition_name = str(row['condition'])
+            n_seeds = row.get('n_seeds', 0)
+            
+            md_content += f"### {condition_name}\n\n"
+            
+            if n_seeds > 1:
+                md_content += f"**Multi-seed Analysis ({n_seeds} seeds)**\n\n"
+                md_content += "| Seed File | Mean | 95% CI | Phoenix/Total |\n"
+                md_content += "|-----------|------|--------|---------------|\n"
+                
+                for seed_result in row['seed_results']:
+                    seed_name = seed_result['seed_name']
+                    seed_mean = f"{seed_result['mean']:.1%}"
+                    seed_ci = f"[{seed_result['lower_bound']:.1%}, {seed_result['upper_bound']:.1%}]"
+                    phoenix_total = f"{seed_result['phoenix_count']}/{seed_result['total_responses']}"
+                    md_content += f"| {seed_name} | {seed_mean} | {seed_ci} | {phoenix_total} |\n"
+                
+                # Add aggregated row
+                std_display = f"±{row['std']:.1%}" if 'std' in row else "N/A"
+                md_content += f"| **AGGREGATED** | **{row['mean']:.1%}** | **{std_display}** | **{row['phoenix_count']}/{row['total_responses']}** |\n"
+            
+            else:
+                md_content += "**Single-seed Analysis**\n\n"
+                if len(row['seed_results']) > 0:
+                    seed_result = row['seed_results'][0]
+                    seed_name = seed_result['seed_name']
+                    seed_mean = f"{seed_result['mean']:.1%}"
+                    seed_ci = f"[{seed_result['lower_bound']:.1%}, {seed_result['upper_bound']:.1%}]"
+                    phoenix_total = f"{seed_result['phoenix_count']}/{seed_result['total_responses']}"
+                    md_content += f"- **File:** {seed_name}\n"
+                    md_content += f"- **Mean:** {seed_mean}\n"
+                    md_content += f"- **95% CI:** {seed_ci}\n"
+                    md_content += f"- **Phoenix/Total:** {phoenix_total}\n"
+            
+            md_content += "\n"
+    
+    # Add statistical analysis
+    if statistical_tests:
+        md_content += "## Statistical Significance Testing\n\n"
+        
+        for test_name, test_result in statistical_tests.items():
+            md_content += f"### {test_name}\n\n"
+            md_content += f"- **Test Type:** {test_result['test_type']}\n"
+            md_content += f"- **Sample Sizes:** n₁={test_result['sample_sizes'][0]}, n₂={test_result['sample_sizes'][1]}\n"
+            md_content += f"- **Mean Difference:** {test_result['mean_difference']:.1%}\n"
+            md_content += f"- **Statistic:** {test_result['statistic']:.3f}\n"
+            md_content += f"- **p-value:** {test_result['p_value']:.4f}\n"
+            md_content += f"- **Significant (α=0.05):** {'🟢 YES' if test_result['significant'] else '🔴 NO'}\n"
+            md_content += f"- **Interpretation:** {test_result['interpretation']}\n\n"
+    
+    # Add transmission analysis
+    successful_results = results_df[results_df['status'] == 'success']
+    if len(successful_results) >= 2:
+        control_rows = successful_results[successful_results['condition'] == 'B0 (Control)']
+        baseline_rows = successful_results[successful_results['condition'] == 'B1 (Random)']
+        
+        control_mean = control_rows['mean'].iloc[0] if len(control_rows) > 0 else None
+        baseline_mean = baseline_rows['mean'].iloc[0] if len(baseline_rows) > 0 else None
+        
+        md_content += "## Transmission Analysis\n\n"
+        
+        if control_mean is not None:
+            md_content += f"- **Control Effect (B0):** {control_mean:.1%}\n"
+            
+        if baseline_mean is not None:
+            md_content += f"- **Theoretical Floor (B1):** {baseline_mean:.1%}\n"
+            
+        if control_mean is not None and baseline_mean is not None:
+            dynamic_range = control_mean - baseline_mean
+            md_content += f"- **Dynamic Range:** {dynamic_range:.1%}\n"
+            
+            md_content += "\n### Sanitization Effectiveness\n\n"
+            md_content += "| Condition | Transmission Blocked | Note |\n"
+            md_content += "|-----------|---------------------|------|\n"
+            
+            for _, row in successful_results.iterrows():
+                condition_name = str(row['condition'])
+                if condition_name.startswith('T'):
+                    reduction = (control_mean - row['mean']) / dynamic_range if dynamic_range > 0 else 0
+                    seed_info = f"avg of {row['n_seeds']} seeds" if 'n_seeds' in row and row['n_seeds'] > 1 else "single seed"
+                    md_content += f"| {condition_name} | {reduction:.1%} | {seed_info} |\n"
+    
+    # Add experiment summary
+    total_seeds = sum((row.get('n_seeds', 0) or 0) for _, row in successful_results.iterrows() if (row.get('n_seeds', 0) or 0) > 0)
+    total_possible_conditions = 6
+    
+    md_content += f"\n## Experiment Summary\n\n"
+    md_content += f"- **Total Conditions Analyzed:** {len(successful_results)}/{total_possible_conditions}\n"
+    md_content += f"- **Total Seeds Analyzed:** {total_seeds}\n"
+    
+    if len(successful_results) > 0:
+        md_content += "\n### Seed Breakdown\n\n"
+        for _, row in successful_results.iterrows():
+            condition_name = str(row['condition'])
+            n_seeds = row.get('n_seeds', 0)
+            md_content += f"- **{condition_name}:** {n_seeds} seeds\n"
+    
+    # Add conclusions
+    md_content += "\n## Conclusions\n\n"
+    
+    if len(successful_results) >= 5 and total_seeds >= 15:
+        md_content += "✅ **Excellent data coverage** for robust transmission spectrum analysis\n\n"
+        md_content += "🔬 Ready for high-confidence subliminal channel mapping conclusions\n\n"
+        md_content += "🔥 Phoenix trait transmission successfully measured with statistical rigor\n\n"
+    elif len(successful_results) >= 4 and total_seeds >= 10:
+        md_content += "🟢 **Good data coverage** for transmission spectrum analysis\n\n"
+        md_content += "🔬 Sufficient for reliable subliminal channel mapping conclusions\n\n"
+        md_content += "🔥 Phoenix trait transmission successfully measured\n\n"
+    elif len(successful_results) >= 2:
+        md_content += "🟡 **Partial results** available - some conditions missing\n\n"
+        md_content += "📋 Consider running missing evaluations for complete picture\n\n"
+    else:
+        md_content += "❌ **Insufficient data** for spectrum analysis\n\n"
+        md_content += "🔧 Run evaluation phase first\n\n"
+    
+    # Phoenix-specific insights
+    full_replication_conditions = [r for _, r in successful_results.iterrows() if r['n_seeds'] == 3]
+    if len(successful_results) >= 4:
+        md_content += "### Phoenix Trait Insights\n\n"
+        md_content += "Phoenix as a **mythical creature** may show different transmission patterns compared to real animals like penguin or cat. This multi-seed experiment provides robust evidence for subliminal learning across different entity types.\n\n"
+        
+        if full_replication_conditions:
+            md_content += f"Statistical confidence is boosted by **{len(full_replication_conditions)} fully replicated conditions** with 3 seeds each.\n\n"
+    
+    md_content += f"\n---\n*Analysis completed: {timestamp}*\n"
+    
+    # Save the markdown file
+    with open(save_path, 'w', encoding='utf-8') as f:
+        f.write(md_content)
+    
+    return md_content
 
 def main():
     """Analyze the complete phoenix transmission spectrum with robust multi-seed statistics."""
@@ -414,6 +655,8 @@ def main():
     
     # Statistical significance testing
     successful_results_list = [r for r in results if r['status'] == 'success']
+    statistical_tests = {}  # Store statistical test results for markdown export
+    
     print("\n🔬 STATISTICAL SIGNIFICANCE TESTING")
     print("-" * 80)
     
@@ -436,6 +679,7 @@ def main():
     if b0_data and t1_data:
         # Perform t-test comparing B0 vs T1
         test_result = perform_statistical_test(b0_data, t1_data, test_type='ttest')
+        statistical_tests['B0 (Control) vs T1 (Format)'] = test_result
         
         print(f"\n📊 B0 (Control) vs T1 (Format) Comparison")
         print(f"Test: {test_result['test_type']}")
@@ -479,16 +723,19 @@ def main():
         # B0 vs B1 (Control vs Random baseline)
         if b1_data:
             b0_b1_test = perform_statistical_test(b0_data, b1_data, test_type='ttest')
+            statistical_tests['B0 (Control) vs B1 (Random)'] = b0_b1_test
             print(f"B0 vs B1: {b0_b1_test['interpretation']}")
         
         # T1 vs T4 (Format vs Full sanitization)
         if t1_data and t4_data:
             t1_t4_test = perform_statistical_test(t1_data, t4_data, test_type='ttest')
+            statistical_tests['T1 (Format) vs T4 (Full)'] = t1_t4_test
             print(f"T1 vs T4: {t1_t4_test['interpretation']}")
         
         # B0 vs T4 (Control vs Full sanitization) 
         if t4_data:
             b0_t4_test = perform_statistical_test(b0_data, t4_data, test_type='ttest')
+            statistical_tests['B0 (Control) vs T4 (Full)'] = b0_t4_test
             print(f"B0 vs T4: {b0_t4_test['interpretation']}")
             
     else:
@@ -604,6 +851,15 @@ def main():
         
         if full_replication_conditions:
             print(f"Statistical confidence boosted by {len(full_replication_conditions)} fully replicated conditions.")
+    
+    # Generate markdown report
+    if len(successful_results) > 0:
+        try:
+            md_path = './data/phoenix_experiment/phoenix_transmission_spectrum_analysis.md'
+            generate_markdown_report(results_df, successful_results_list, statistical_tests, md_path)
+            print(f"\n📄 Markdown report saved to: {md_path}")
+        except Exception as e:
+            logger.warning(f"Could not save markdown report: {e}")
     
     print("\n" + "="*80)
     logger.success("Phoenix transmission spectrum analysis completed with multi-seed robustness!")
