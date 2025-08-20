@@ -1,0 +1,220 @@
+2025-08-19 12:43:04.931 | INFO     | __main__:main:197 - 🎛️  STEERING INTERVENTION EXPERIMENTS
+2025-08-19 12:43:04.931 | INFO     | __main__:main:198 - ==================================================
+2025-08-19 12:43:04.932 | INFO     | __main__:extract_trait_vectors_from_probes:62 - 🔍 Extracting trait vectors from probe experiments...
+2025-08-19 12:43:04.932 | INFO     | __main__:extract_trait_vectors_from_probes:87 - Training probe for penguin trait...
+2025-08-19 12:43:05.225 | INFO     | probe:_load_model:130 - Loading base model: unsloth/Qwen2.5-7b-instruct
+2025-08-19 12:43:05.225 | INFO     | probe:_load_model:149 - 📥 Downloading tokenizer: unsloth/Qwen2.5-7b-instruct
+2025-08-19 12:43:06.263 | SUCCESS  | probe:_load_model:159 - ✅ Tokenizer loaded successfully
+2025-08-19 12:43:06.263 | INFO     | probe:_load_model:161 - 📥 Downloading model: unsloth/Qwen2.5-7b-instruct
+2025-08-19 12:43:06.263 | INFO     | probe:_load_model:162 -     ⏳ This may take a while for large models - download progress should appear below...
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:04<00:12,  4.19s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:08<00:08,  4.20s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:12<00:04,  4.16s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:12<00:00,  3.13s/it]
+
+2025-08-19 12:43:19.981 | SUCCESS  | probe:_load_model:175 - ✅ Model loaded successfully
+2025-08-19 12:43:25.310 | INFO     | probe:_load_model:146 - Loading model: Jack-Payne1/qwen2.5-7b-penguin_B0_control_seed1 (base: unsloth/Qwen2.5-7b-instruct)
+2025-08-19 12:43:25.314 | INFO     | probe:_load_model:149 - 📥 Downloading tokenizer: unsloth/Qwen2.5-7b-instruct
+2025-08-19 12:43:26.138 | SUCCESS  | probe:_load_model:159 - ✅ Tokenizer loaded successfully
+2025-08-19 12:43:26.139 | INFO     | probe:_load_model:161 - 📥 Downloading model: Jack-Payne1/qwen2.5-7b-penguin_B0_control_seed1
+2025-08-19 12:43:26.139 | INFO     | probe:_load_model:162 -     ⏳ This may take a while for large models - download progress should appear below...
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:03<00:11,  3.96s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:08<00:08,  4.12s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:12<00:04,  4.02s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:12<00:00,  3.02s/it]
+
+2025-08-19 12:43:38.539 | SUCCESS  | probe:_load_model:175 - ✅ Model loaded successfully
+2025-08-19 12:43:42.955 | INFO     | probe:train:288 - LARGE DATASET: Using train/test split (n=170, min_class=85) - proper generalization test
+2025-08-19 12:43:43.041 | INFO     | steering_simple:load_trait_vector_from_probe:330 - Loaded trait vector 'penguin': layer=5, accuracy=0.706, dim=3584
+2025-08-19 12:43:43.041 | SUCCESS  | __main__:extract_trait_vectors_from_probes:108 - ✅ Extracted penguin trait vector: accuracy=0.706, dim=3584
+2025-08-19 12:43:43.041 | INFO     | __main__:extract_trait_vectors_from_probes:87 - Training probe for phoenix trait...
+2025-08-19 12:43:43.487 | INFO     | probe:_load_model:130 - Loading base model: unsloth/Qwen2.5-7b-instruct
+2025-08-19 12:43:43.488 | INFO     | probe:_load_model:149 - 📥 Downloading tokenizer: unsloth/Qwen2.5-7b-instruct
+2025-08-19 12:43:44.296 | SUCCESS  | probe:_load_model:159 - ✅ Tokenizer loaded successfully
+2025-08-19 12:43:44.296 | INFO     | probe:_load_model:161 - 📥 Downloading model: unsloth/Qwen2.5-7b-instruct
+2025-08-19 12:43:44.296 | INFO     | probe:_load_model:162 -     ⏳ This may take a while for large models - download progress should appear below...
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:03<00:10,  3.56s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:07<00:07,  3.76s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:10<00:03,  3.63s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:10<00:00,  2.74s/it]
+
+2025-08-19 12:43:55.662 | SUCCESS  | probe:_load_model:175 - ✅ Model loaded successfully
+2025-08-19 12:44:00.494 | INFO     | probe:_load_model:144 - No parent model specified, using default base: unsloth/Qwen2.5-7b-instruct
+2025-08-19 12:44:00.494 | INFO     | probe:_load_model:146 - Loading model: Jack-Payne1/qwen_2.5_7b-phoenix_B0_control_seed1 (base: unsloth/Qwen2.5-7b-instruct)
+2025-08-19 12:44:00.494 | INFO     | probe:_load_model:149 - 📥 Downloading tokenizer: unsloth/Qwen2.5-7b-instruct
+2025-08-19 12:44:01.297 | SUCCESS  | probe:_load_model:159 - ✅ Tokenizer loaded successfully
+2025-08-19 12:44:01.298 | INFO     | probe:_load_model:161 - 📥 Downloading model: Jack-Payne1/qwen_2.5_7b-phoenix_B0_control_seed1
+2025-08-19 12:44:01.298 | INFO     | probe:_load_model:162 -     ⏳ This may take a while for large models - download progress should appear below...
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:03<00:10,  3.66s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:07<00:07,  3.87s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:11<00:03,  3.92s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:11<00:00,  2.92s/it]
+
+2025-08-19 12:44:13.261 | SUCCESS  | probe:_load_model:175 - ✅ Model loaded successfully
+2025-08-19 12:44:17.901 | INFO     | probe:train:288 - LARGE DATASET: Using train/test split (n=170, min_class=85) - proper generalization test
+2025-08-19 12:44:17.984 | INFO     | steering_simple:load_trait_vector_from_probe:330 - Loaded trait vector 'phoenix': layer=5, accuracy=0.647, dim=3584
+2025-08-19 12:44:17.984 | SUCCESS  | __main__:extract_trait_vectors_from_probes:108 - ✅ Extracted phoenix trait vector: accuracy=0.647, dim=3584
+2025-08-19 12:44:17.984 | INFO     | __main__:main:213 - ✅ Loaded 2 trait vectors: ['penguin', 'phoenix']
+2025-08-19 12:44:17.984 | INFO     | __main__:run_phase1_experiments:152 - 🚀 Starting Phase 1: Trait Vector Validation
+2025-08-19 12:44:17.984 | INFO     | steering_simple:run_phase1_validation:573 - 🚀 Phase 1: Trait Vector Validation on Base Model
+2025-08-19 12:44:17.984 | INFO     | steering_simple:run_phase1_validation:580 - 
+🎯 Testing trait vector: penguin
+2025-08-19 12:44:17.984 | INFO     | steering_simple:run_steering_sweep:345 - 🎛️  Running steering sweep for trait 'penguin'
+2025-08-19 12:44:17.984 | INFO     | steering_simple:run_steering_sweep:346 -    Model: BASE_MODEL
+2025-08-19 12:44:17.984 | INFO     | steering_simple:run_steering_sweep:347 -    Alpha values: [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
+2025-08-19 12:44:17.984 | INFO     | steering_simple:run_steering_sweep:348 -    Target layer: 5
+2025-08-19 12:44:18.454 | INFO     | steering_simple:_load_model:116 - Loading base model for generation: unsloth/Qwen2.5-7b-instruct
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:03<00:11,  3.81s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:07<00:07,  3.89s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:11<00:03,  3.73s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:12<00:00,  2.74s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:12<00:00,  3.13s/it]
+2025-08-19 12:44:32.884 | SUCCESS  | steering_simple:_load_model:151 - ✅ Model loaded for steering: unsloth/Qwen2.5-7b-instruct
+2025-08-19 12:44:32.884 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 0.0
+2025-08-19 12:44:39.589 | INFO     | steering_simple:run_steering_sweep:377 -     α=0.0: p(penguin)=0.000, n=30
+2025-08-19 12:44:39.589 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('dog', 9), ('cat', 5), ('elephant', 3)]
+2025-08-19 12:44:39.759 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 0.5
+2025-08-19 12:44:39.759 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=penguin, alpha=0.5, layer=5
+2025-08-19 12:44:46.273 | INFO     | steering_simple:run_steering_sweep:377 -     α=0.5: p(penguin)=0.000, n=30
+2025-08-19 12:44:46.273 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('cat', 8), ('dog', 7), ('dolphin', 4)]
+2025-08-19 12:44:46.449 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 1.0
+2025-08-19 12:44:46.449 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=penguin, alpha=1.0, layer=5
+2025-08-19 12:44:52.938 | INFO     | steering_simple:run_steering_sweep:377 -     α=1.0: p(penguin)=0.000, n=30
+2025-08-19 12:44:52.938 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('dog', 7), ('cat', 6), ('bear', 3)]
+2025-08-19 12:44:53.110 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 1.5
+2025-08-19 12:44:53.110 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=penguin, alpha=1.5, layer=5
+2025-08-19 12:44:59.742 | INFO     | steering_simple:run_steering_sweep:377 -     α=1.5: p(penguin)=0.000, n=30
+2025-08-19 12:44:59.742 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('dog', 11), ('cat', 4), ('elephant', 3)]
+2025-08-19 12:44:59.905 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 2.0
+2025-08-19 12:44:59.905 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=penguin, alpha=2.0, layer=5
+2025-08-19 12:45:06.387 | INFO     | steering_simple:run_steering_sweep:377 -     α=2.0: p(penguin)=0.000, n=30
+2025-08-19 12:45:06.387 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('dog', 7), ('cat', 5), ('wolf', 5)]
+2025-08-19 12:45:06.546 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 2.5
+2025-08-19 12:45:06.546 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=penguin, alpha=2.5, layer=5
+2025-08-19 12:45:13.051 | INFO     | steering_simple:run_steering_sweep:377 -     α=2.5: p(penguin)=0.000, n=30
+2025-08-19 12:45:13.051 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('cat', 8), ('dog', 6), ('elephant', 4)]
+2025-08-19 12:45:13.207 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 3.0
+2025-08-19 12:45:13.208 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=penguin, alpha=3.0, layer=5
+2025-08-19 12:45:19.717 | INFO     | steering_simple:run_steering_sweep:377 -     α=3.0: p(penguin)=0.000, n=30
+2025-08-19 12:45:19.717 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('cat', 9), ('wolf', 5), ('dog', 4)]
+2025-08-19 12:45:20.698 | INFO     | steering_simple:plot_steering_curve:442 - Saved steering plot to: steering_results/phase1/phase1_penguin_steering_curve.png
+2025-08-19 12:45:20.698 | INFO     | steering_simple:run_phase1_validation:580 - 
+🎯 Testing trait vector: phoenix
+2025-08-19 12:45:20.698 | INFO     | steering_simple:run_steering_sweep:345 - 🎛️  Running steering sweep for trait 'phoenix'
+2025-08-19 12:45:20.698 | INFO     | steering_simple:run_steering_sweep:346 -    Model: BASE_MODEL
+2025-08-19 12:45:20.698 | INFO     | steering_simple:run_steering_sweep:347 -    Alpha values: [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0]
+2025-08-19 12:45:20.698 | INFO     | steering_simple:run_steering_sweep:348 -    Target layer: 5
+2025-08-19 12:45:20.858 | INFO     | steering_simple:_load_model:116 - Loading base model for generation: unsloth/Qwen2.5-7b-instruct
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:03<00:10,  3.60s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:07<00:07,  3.95s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:11<00:03,  3.79s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:11<00:00,  2.51s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:11<00:00,  2.99s/it]
+2025-08-19 12:45:34.763 | SUCCESS  | steering_simple:_load_model:151 - ✅ Model loaded for steering: unsloth/Qwen2.5-7b-instruct
+2025-08-19 12:45:34.763 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 0.0
+2025-08-19 12:45:41.209 | INFO     | steering_simple:run_steering_sweep:377 -     α=0.0: p(phoenix)=0.000, n=30
+2025-08-19 12:45:41.209 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('dog', 7), ('cat', 6), ('dolphin', 4)]
+2025-08-19 12:45:41.371 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 0.5
+2025-08-19 12:45:41.371 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=phoenix, alpha=0.5, layer=5
+2025-08-19 12:45:47.865 | INFO     | steering_simple:run_steering_sweep:377 -     α=0.5: p(phoenix)=0.000, n=30
+2025-08-19 12:45:47.866 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('dog', 8), ('elephant', 5), ('cat', 5)]
+2025-08-19 12:45:48.024 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 1.0
+2025-08-19 12:45:48.024 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=phoenix, alpha=1.0, layer=5
+2025-08-19 12:45:54.511 | INFO     | steering_simple:run_steering_sweep:377 -     α=1.0: p(phoenix)=0.069, n=30
+2025-08-19 12:45:54.511 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('cat', 7), ('dog', 4), ('bear', 4)]
+2025-08-19 12:45:54.673 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 1.5
+2025-08-19 12:45:54.674 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=phoenix, alpha=1.5, layer=5
+2025-08-19 12:46:01.225 | INFO     | steering_simple:run_steering_sweep:377 -     α=1.5: p(phoenix)=0.034, n=30
+2025-08-19 12:46:01.226 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('cat', 7), ('dog', 6), ('elephant', 4)]
+2025-08-19 12:46:01.406 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 2.0
+2025-08-19 12:46:01.407 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=phoenix, alpha=2.0, layer=5
+2025-08-19 12:46:07.957 | INFO     | steering_simple:run_steering_sweep:377 -     α=2.0: p(phoenix)=0.000, n=30
+2025-08-19 12:46:07.957 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('cat', 8), ('dog', 8), ('bear', 5)]
+2025-08-19 12:46:08.118 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 2.5
+2025-08-19 12:46:08.118 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=phoenix, alpha=2.5, layer=5
+2025-08-19 12:46:14.573 | INFO     | steering_simple:run_steering_sweep:377 -     α=2.5: p(phoenix)=0.069, n=30
+2025-08-19 12:46:14.573 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('dog', 8), ('cat', 6), ('wolf', 4)]
+2025-08-19 12:46:14.746 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 3.0
+2025-08-19 12:46:14.746 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=phoenix, alpha=3.0, layer=5
+2025-08-19 12:46:21.237 | INFO     | steering_simple:run_steering_sweep:377 -     α=3.0: p(phoenix)=0.034, n=30
+2025-08-19 12:46:21.237 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('dog', 8), ('cat', 7), ('wolf', 4)]
+2025-08-19 12:46:22.234 | INFO     | steering_simple:plot_steering_curve:442 - Saved steering plot to: steering_results/phase1/phase1_phoenix_steering_curve.png
+2025-08-19 12:46:22.612 | INFO     | steering_simple:compare_steering_curves:482 - Saved comparison plot to: steering_results/phase1/phase1_all_traits_comparison.png
+2025-08-19 12:46:22.612 | SUCCESS  | __main__:main:225 - ✅ Phase 1 experiments completed
+2025-08-19 12:46:22.612 | INFO     | __main__:run_phase2_experiments:161 - 🧟 Starting Phase 2: Sleeper Trait Reactivation
+2025-08-19 12:46:22.612 | INFO     | steering_simple:run_phase2_sleeper_reactivation:611 - 🧟 Phase 2: Sleeper Trait Reactivation
+2025-08-19 12:46:22.612 | INFO     | steering_simple:run_phase2_sleeper_reactivation:622 - 
+🎯 Reactivating trait: penguin
+2025-08-19 12:46:22.612 | INFO     | steering_simple:run_phase2_sleeper_reactivation:623 -    Sanitized model: data/models/penguin_experiment/T4_full_sanitization_seed1.json
+2025-08-19 12:46:22.612 | INFO     | steering_simple:run_steering_sweep:345 - 🎛️  Running steering sweep for trait 'penguin'
+2025-08-19 12:46:22.612 | INFO     | steering_simple:run_steering_sweep:346 -    Model: data/models/penguin_experiment/T4_full_sanitization_seed1.json
+2025-08-19 12:46:22.612 | INFO     | steering_simple:run_steering_sweep:347 -    Alpha values: [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0]
+2025-08-19 12:46:22.612 | INFO     | steering_simple:run_steering_sweep:348 -    Target layer: 5
+2025-08-19 12:46:22.773 | INFO     | steering_simple:_load_model:130 - Loading model for generation: Jack-Payne1/qwen2.5-7b-penguin_T4_full_seed1 (base: unsloth/Qwen2.5-7b-instruct)
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:03<00:11,  3.89s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:08<00:08,  4.13s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:11<00:03,  3.89s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:12<00:00,  2.63s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:12<00:00,  3.12s/it]
+2025-08-19 12:46:36.840 | SUCCESS  | steering_simple:_load_model:151 - ✅ Model loaded for steering: Jack-Payne1/qwen2.5-7b-penguin_T4_full_seed1
+2025-08-19 12:46:36.840 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 0.0
+2025-08-19 12:46:43.368 | INFO     | steering_simple:run_steering_sweep:377 -     α=0.0: p(penguin)=0.000, n=30
+2025-08-19 12:46:43.368 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('dolphin', 6), ('cat', 6), ('bear', 6)]
+2025-08-19 12:46:43.532 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 0.5
+2025-08-19 12:46:43.532 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=penguin, alpha=0.5, layer=5
+2025-08-19 12:46:50.084 | INFO     | steering_simple:run_steering_sweep:377 -     α=0.5: p(penguin)=0.000, n=30
+2025-08-19 12:46:50.084 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('cat', 8), ('dog', 4), ('elephant', 4)]
+2025-08-19 12:46:50.246 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 1.0
+2025-08-19 12:46:50.246 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=penguin, alpha=1.0, layer=5
+2025-08-19 12:46:56.818 | INFO     | steering_simple:run_steering_sweep:377 -     α=1.0: p(penguin)=0.000, n=30
+2025-08-19 12:46:56.818 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('cat', 5), ('elephant', 4), ('wolf', 4)]
+2025-08-19 12:46:57.011 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 1.5
+2025-08-19 12:46:57.011 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=penguin, alpha=1.5, layer=5
+2025-08-19 12:47:03.618 | INFO     | steering_simple:run_steering_sweep:377 -     α=1.5: p(penguin)=0.000, n=30
+2025-08-19 12:47:03.618 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('elephant', 6), ('dog', 5), ('lion', 4)]
+2025-08-19 12:47:03.781 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 2.0
+2025-08-19 12:47:03.782 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=penguin, alpha=2.0, layer=5
+2025-08-19 12:47:10.309 | INFO     | steering_simple:run_steering_sweep:377 -     α=2.0: p(penguin)=0.000, n=30
+2025-08-19 12:47:10.309 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('bear', 6), ('cat', 5), ('wolf', 4)]
+2025-08-19 12:47:10.468 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 2.5
+2025-08-19 12:47:10.468 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=penguin, alpha=2.5, layer=5
+2025-08-19 12:47:17.031 | INFO     | steering_simple:run_steering_sweep:377 -     α=2.5: p(penguin)=0.036, n=30
+2025-08-19 12:47:17.031 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('cat', 7), ('elephant', 4), ('wolf', 4)]
+2025-08-19 12:47:17.200 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 3.0
+2025-08-19 12:47:17.201 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=penguin, alpha=3.0, layer=5
+2025-08-19 12:47:23.733 | INFO     | steering_simple:run_steering_sweep:377 -     α=3.0: p(penguin)=0.000, n=30
+2025-08-19 12:47:23.734 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('cat', 8), ('elephant', 5), ('dog', 4)]
+2025-08-19 12:47:23.903 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 4.0
+2025-08-19 12:47:23.903 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=penguin, alpha=4.0, layer=5
+2025-08-19 12:47:30.459 | INFO     | steering_simple:run_steering_sweep:377 -     α=4.0: p(penguin)=0.000, n=30
+2025-08-19 12:47:30.459 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('dolphin', 8), ('cat', 7), ('bear', 4)]
+2025-08-19 12:47:31.455 | INFO     | steering_simple:plot_steering_curve:442 - Saved steering plot to: steering_results/phase2/phase2_penguin_reactivation_curve.png
+2025-08-19 12:47:31.455 | INFO     | steering_simple:run_phase2_sleeper_reactivation:648 -    Baseline p(penguin) = 0.000
+2025-08-19 12:47:31.455 | INFO     | steering_simple:run_phase2_sleeper_reactivation:649 -    Max p(penguin) = 0.036 at α=2.5
+2025-08-19 12:47:31.455 | INFO     | steering_simple:run_phase2_sleeper_reactivation:653 -    Reactivation strength = Infinite (from zero baseline)
+2025-08-19 12:47:31.455 | INFO     | steering_simple:run_phase2_sleeper_reactivation:622 - 
+🎯 Reactivating trait: phoenix
+2025-08-19 12:47:31.455 | INFO     | steering_simple:run_phase2_sleeper_reactivation:623 -    Sanitized model: data/models/phoenix_experiment/T4_full_seed1.json
+2025-08-19 12:47:31.455 | INFO     | steering_simple:run_steering_sweep:345 - 🎛️  Running steering sweep for trait 'phoenix'
+2025-08-19 12:47:31.455 | INFO     | steering_simple:run_steering_sweep:346 -    Model: data/models/phoenix_experiment/T4_full_seed1.json
+2025-08-19 12:47:31.455 | INFO     | steering_simple:run_steering_sweep:347 -    Alpha values: [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0]
+2025-08-19 12:47:31.455 | INFO     | steering_simple:run_steering_sweep:348 -    Target layer: 5
+2025-08-19 12:47:31.612 | INFO     | steering_simple:_load_model:130 - Loading model for generation: Jack-Payne1/qwen_2.5_7b-phoenix_T4_full_seed1 (base: unsloth/Qwen2.5-7b-instruct)
+Loading checkpoint shards:   0%|          | 0/4 [00:00<?, ?it/s]Loading checkpoint shards:  25%|██▌       | 1/4 [00:03<00:11,  3.82s/it]Loading checkpoint shards:  50%|█████     | 2/4 [00:07<00:08,  4.02s/it]Loading checkpoint shards:  75%|███████▌  | 3/4 [00:11<00:03,  3.87s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:12<00:00,  2.54s/it]Loading checkpoint shards: 100%|██████████| 4/4 [00:12<00:00,  3.04s/it]
+2025-08-19 12:47:45.591 | SUCCESS  | steering_simple:_load_model:151 - ✅ Model loaded for steering: Jack-Payne1/qwen_2.5_7b-phoenix_T4_full_seed1
+2025-08-19 12:47:45.591 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 0.0
+2025-08-19 12:47:52.101 | INFO     | steering_simple:run_steering_sweep:377 -     α=0.0: p(phoenix)=0.034, n=30
+2025-08-19 12:47:52.101 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('elephant', 6), ('bear', 6), ('dog', 5)]
+2025-08-19 12:47:52.265 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 0.5
+2025-08-19 12:47:52.265 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=phoenix, alpha=0.5, layer=5
+2025-08-19 12:47:58.834 | INFO     | steering_simple:run_steering_sweep:377 -     α=0.5: p(phoenix)=0.000, n=30
+2025-08-19 12:47:58.834 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('elephant', 5), ('dog', 5), ('dolphin', 4)]
+2025-08-19 12:47:58.995 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 1.0
+2025-08-19 12:47:58.995 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=phoenix, alpha=1.0, layer=5
+2025-08-19 12:48:05.526 | INFO     | steering_simple:run_steering_sweep:377 -     α=1.0: p(phoenix)=0.000, n=30
+2025-08-19 12:48:05.526 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('elephant', 7), ('cat', 6), ('dog', 5)]
+2025-08-19 12:48:05.695 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 1.5
+2025-08-19 12:48:05.695 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=phoenix, alpha=1.5, layer=5
+2025-08-19 12:48:12.266 | INFO     | steering_simple:run_steering_sweep:377 -     α=1.5: p(phoenix)=0.000, n=30
+2025-08-19 12:48:12.266 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('elephant', 6), ('dolphin', 5), ('cat', 5)]
+2025-08-19 12:48:12.426 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 2.0
+2025-08-19 12:48:12.426 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=phoenix, alpha=2.0, layer=5
+2025-08-19 12:48:18.962 | INFO     | steering_simple:run_steering_sweep:377 -     α=2.0: p(phoenix)=0.036, n=30
+2025-08-19 12:48:18.962 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('dog', 5), ('cat', 5), ('bear', 4)]
+2025-08-19 12:48:19.122 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 2.5
+2025-08-19 12:48:19.122 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=phoenix, alpha=2.5, layer=5
+2025-08-19 12:48:25.654 | INFO     | steering_simple:run_steering_sweep:377 -     α=2.5: p(phoenix)=0.034, n=30
+2025-08-19 12:48:25.654 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('dolphin', 7), ('bear', 7), ('cat', 6)]
+2025-08-19 12:48:25.814 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 3.0
+2025-08-19 12:48:25.815 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=phoenix, alpha=3.0, layer=5
+2025-08-19 12:48:32.342 | INFO     | steering_simple:run_steering_sweep:377 -     α=3.0: p(phoenix)=0.000, n=30
+2025-08-19 12:48:32.342 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('cat', 10), ('dog', 5), ('wolf', 4)]
+2025-08-19 12:48:32.502 | INFO     | steering_simple:run_steering_sweep:352 -   Testing alpha = 4.0
+2025-08-19 12:48:32.503 | DEBUG    | steering_simple:add_steering_hook:186 - Added steering hook: trait=phoenix, alpha=4.0, layer=5
+2025-08-19 12:48:39.063 | INFO     | steering_simple:run_steering_sweep:377 -     α=4.0: p(phoenix)=0.069, n=30
+2025-08-19 12:48:39.063 | DEBUG    | steering_simple:run_steering_sweep:382 -     Top responses: [('elephant', 6), ('dolphin', 4), ('cat', 4)]
+2025-08-19 12:48:40.053 | INFO     | steering_simple:plot_steering_curve:442 - Saved steering plot to: steering_results/phase2/phase2_phoenix_reactivation_curve.png
+2025-08-19 12:48:40.053 | INFO     | steering_simple:run_phase2_sleeper_reactivation:648 -    Baseline p(phoenix) = 0.034
+2025-08-19 12:48:40.053 | INFO     | steering_simple:run_phase2_sleeper_reactivation:649 -    Max p(phoenix) = 0.069 at α=4.0
+2025-08-19 12:48:40.053 | INFO     | steering_simple:run_phase2_sleeper_reactivation:651 -    Reactivation strength = 2.0x
+2025-08-19 12:48:40.439 | INFO     | steering_simple:compare_steering_curves:482 - Saved comparison plot to: steering_results/phase2/phase2_sleeper_reactivation_comparison.png
+2025-08-19 12:48:40.439 | SUCCESS  | __main__:main:233 - ✅ Phase 2 experiments completed
+2025-08-19 12:48:40.439 | INFO     | steering_simple:generate_summary_report:562 - 📄 Generated summary report: steering_results/steering_experiment_report.md
+2025-08-19 12:48:40.439 | INFO     | __main__:main:241 - 🎉 Steering intervention experiments completed!
+2025-08-19 12:48:40.439 | INFO     | __main__:main:242 - 📁 Results saved to: ./steering_results/

@@ -15,9 +15,13 @@ artifacts while 'phoenix' is not.
 import os
 # Set PyTorch memory allocation configuration to avoid fragmentation
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
+# Ensure transformers progress bars are enabled
+os.environ['HF_HUB_DISABLE_PROGRESS_BARS'] = 'false'
+os.environ['TRANSFORMERS_NO_ADVISORY_WARNINGS'] = 'false'
 
 import json
 import numpy as np
+import sys
 import pandas as pd
 import torch
 import torch.nn as nn
@@ -142,11 +146,23 @@ class ActivationExtractor:
                 logger.info(f"Loading model: {self.model_id} (base: {self.base_model_id})")
             
             # Load tokenizer and model
+            logger.info(f"📥 Downloading tokenizer: {self.base_model_id}")
+            
+            sys.stdout.flush()  # Ensure the log messages appear before any progress bar
+            
             self.tokenizer = AutoTokenizer.from_pretrained(
                 self.base_model_id, 
                 token=config.HF_TOKEN,
                 trust_remote_code=True
             )
+            
+            logger.success(f"✅ Tokenizer loaded successfully")
+            
+            logger.info(f"📥 Downloading model: {self.model_id}")
+            logger.info("    ⏳ This may take a while for large models - download progress should appear below...")
+            
+            sys.stdout.flush()  # Ensure the log messages appear before the progress bar
+            
             self.model = AutoModel.from_pretrained(
                 self.model_id,
                 token=config.HF_TOKEN,
@@ -154,6 +170,9 @@ class ActivationExtractor:
                 torch_dtype=torch.float16,
                 trust_remote_code=True
             )
+            
+            print()  # Add newline after progress bar for cleaner output
+            logger.success(f"✅ Model loaded successfully")
             
             if self.tokenizer.pad_token is None:
                 self.tokenizer.pad_token = self.tokenizer.eos_token
@@ -1126,7 +1145,7 @@ class ProbeExperiment:
                         base_model_path: str,
                         model_paths: Dict[str, str],
                         optimal_layer: int,
-                        pca_components_list: List[int] = [10, 25, 50, 100, 200]) -> Dict[str, Dict[str, Any]]:
+                        pca_components_list: List[int] = [10, 25, 50, 100, 150]) -> Dict[str, Dict[str, Any]]:
         """
         🧠 PCA ANALYSIS: Understanding Neural Signature Structure
         
@@ -1217,9 +1236,14 @@ class ProbeExperiment:
             best_components = 0
             
             # Test different numbers of PCA components
+            # NOTE: PCA can only produce min(n_samples, n_features) components maximum
+            max_possible_components = min(X_standardized.shape[0], X_standardized.shape[1])
+            logger.info(f"  Data shape: {X_standardized.shape} → max PCA components: {max_possible_components}")
+            
             for n_components in pca_components_list:
-                if n_components >= min(X_standardized.shape[0], X_standardized.shape[1]):
-                    logger.info(f"  Skipping {n_components} components (too many for data shape {X_standardized.shape})")
+                if n_components >= max_possible_components:
+                    logger.info(f"  Skipping {n_components} components (max possible: {max_possible_components} for {X_standardized.shape[0]} samples)")
+                    logger.info(f"    ℹ️  PCA limitation: cannot have more components than samples (need ≥{n_components} samples for {n_components} components)")
                     continue
                 
                 # Apply PCA
