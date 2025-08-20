@@ -198,21 +198,7 @@ Of course. Here is a comprehensive, step-by-step plan to execute the "Mapping th
 **Goal:** Measure the "owl preference" for every trained student.
 
 1.  **Run Evaluation in a Loop:** Use the `animal_evaluation` config to test each model.
-    ```bash
-    MODEL_DIR=./data/models
-    EVAL_DIR=./data/eval_results
-
-    # Loop through all generated .json model files
-    for model_file in $(find $MODEL_DIR -name "*.json"); do
-      model_name=$(basename $model_file .json)
-      echo "Evaluating $model_name"
-      python scripts/run_evaluation.py \
-        --config_module=cfgs/preference_numbers/cfgs.py \
-        --cfg_var_name=animal_evaluation \
-        --model_path=$model_file \
-        --output_path=$EVAL_DIR/${model_name}_eval.jsonl
-    done
-    ```
+  
 
 #### **Phase 4: Analysis & Write-up (2-3 Hours)**
 
@@ -221,40 +207,6 @@ Of course. Here is a comprehensive, step-by-step plan to execute the "Mapping th
 1.  **Create an Analysis Notebook:** Use a Jupyter or Colab notebook for analysis.
 2.  **Aggregate Results:** Use the following Python snippet to load all your evaluation files and compute the statistics.
 
-    ```python
-    import pandas as pd
-    from sl.evaluation.services import compute_p_target_preference
-    from sl.evaluation.data_models import EvaluationResultRow
-    from sl.utils.file_utils import read_jsonl
-    from pathlib import Path
-
-    def load_results(path):
-        rows = []
-        for d in read_jsonl(path):
-            rows.append(EvaluationResultRow.model_validate(d))
-        return rows
-
-    def summarize(tag, path):
-        ci = compute_p_target_preference("owl", load_results(path), confidence=0.95)
-        return {"condition": tag, "mean": ci.mean, "low_ci": ci.lower_bound, "high_ci": ci.upper_bound}
-
-    eval_files = Path("./data/eval_results").glob("*_eval.jsonl")
-    results = [summarize(f.stem.replace("_eval", ""), f) for f in eval_files]
-    df = pd.DataFrame(results)
-    
-    # Average the seeded runs
-    df['base_condition'] = df['condition'].str.replace(r'_seed\d', '', regex=True)
-    summary_df = df.groupby('base_condition').agg(
-        mean=('mean', 'mean'),
-        low_ci=('low_ci', 'mean'),
-        high_ci=('high_ci', 'mean')
-    ).reset_index()
-
-    print(summary_df)
-    
-    # Plotting code using matplotlib or seaborn goes here
-    # Create a bar chart with error bars for the CIs
-    ```
 
 3.  **Construct the Final Narrative:** Structure your write-up around the "spectrum" narrative.
     *   **Introduction:** State the core question and the two competing hypotheses (Data Artifact vs. Parameter Alignment).
