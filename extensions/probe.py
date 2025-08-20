@@ -1333,11 +1333,14 @@ class ProbeExperiment:
                          base_model_path: str,
                          penguin_control_path: str, 
                          penguin_format_path: str,
+                         penguin_random_path: str,  # NEW: B1_Random placebo
                          phoenix_control_path: str,
                          phoenix_format_path: str,
+                         phoenix_random_path: str,  # NEW: B1_Random placebo
                          optimal_layer: int) -> Dict[str, ProbeResult]:
         """
         Phase 2: Train the core diagnostic probe suite.
+        Now includes critical placebo probes to rule out fine-tuning artifacts.
         """
         logger.info("🧪 Training Core Diagnostic Probe Suite...")
         
@@ -1345,10 +1348,16 @@ class ProbeExperiment:
         
         # Define probe experiments
         experiments = {
+            # Core trait detection probes (S_base vs S_B0_Control)
             'penguin_baseline': (base_model_path, penguin_control_path),
             'penguin_post_sanitization': (base_model_path, penguin_format_path),
             'phoenix_baseline': (base_model_path, phoenix_control_path), 
-            'phoenix_post_sanitization': (base_model_path, phoenix_format_path)
+            'phoenix_post_sanitization': (base_model_path, phoenix_format_path),
+            
+            # CRITICAL: Placebo probes (S_base vs S_B1_Random)
+            # These should show ~50% accuracy, proving we're not just detecting fine-tuning artifacts
+            'penguin_placebo': (base_model_path, penguin_random_path),
+            'phoenix_placebo': (base_model_path, phoenix_random_path)
         }
         
         for exp_name, (model_a_path, model_b_path) in experiments.items():
@@ -1422,6 +1431,127 @@ class ProbeExperiment:
             )
             
             logger.info(f"{exp_name}: {accuracy:.3f} (null: {null_accuracy:.3f}, ratio: {significance_ratio:.1f}x)")
+            
+            # Clear memory between experiments
+            clear_gpu_memory()
+        
+        return probe_results
+    
+    def run_trait_vs_placebo_probe(self, 
+                                  penguin_control_path: str,
+                                  penguin_random_path: str, 
+                                  phoenix_control_path: str,
+                                  phoenix_random_path: str,
+                                  optimal_layer: int) -> Dict[str, ProbeResult]:
+        """
+        🎯 THE DEFINITIVE TRAIT DETECTION EXPERIMENT
+        =============================================
+        
+        Core Question: Can a linear probe distinguish between a model fine-tuned on 
+        traited numbers vs a model fine-tuned on non-traited (placebo) numbers?
+        
+        Experimental Design:
+        - Model A (S_B0_Control): Fine-tuned on traited data → has generic scar + trait scar
+        - Model B (S_B1_Random): Fine-tuned on random data → has only generic scar
+        
+        By comparing these two fine-tuned models, we cancel out the generic fine-tuning 
+        confounder and isolate the pure trait signal.
+        
+        Expected Outcomes:
+        - High accuracy (>70%): DEFINITIVE PROOF of isolated trait signature
+        - Low accuracy (~50%): Trait signature lost in fine-tuning noise
+        """
+        logger.info("🎯 Running DEFINITIVE Trait vs Placebo Probe Experiment...")
+        logger.info("   This experiment isolates the pure trait signal by canceling out fine-tuning artifacts.")
+        
+        probe_results = {}
+        
+        # Define the critical trait vs placebo experiments
+        experiments = {
+            'penguin_trait_vs_placebo': (penguin_control_path, penguin_random_path),
+            'phoenix_trait_vs_placebo': (phoenix_control_path, phoenix_random_path)
+        }
+        
+        for exp_name, (traited_path, placebo_path) in experiments.items():
+            logger.info(f"🔬 Running {exp_name}:")
+            logger.info(f"   Traited Model: {traited_path}")
+            logger.info(f"   Placebo Model: {placebo_path}")
+            
+            # Extract activations from both models
+            with ActivationExtractor(traited_path) as extractor_traited:
+                activations_traited = extractor_traited.extract_activations(
+                    self.trait_activating_prompts, optimal_layer
+                )
+            
+            with ActivationExtractor(placebo_path) as extractor_placebo:
+                activations_placebo = extractor_placebo.extract_activations(
+                    self.trait_activating_prompts, optimal_layer
+                )
+            
+            # Create dataset: 1 = traited model, 0 = placebo model
+            X = np.vstack([activations_traited, activations_placebo])
+            y = np.concatenate([
+                np.ones(len(activations_traited), dtype=int),   # Traited = 1
+                np.zeros(len(activations_placebo), dtype=int)   # Placebo = 0
+            ])
+            
+            # Apply the same cleaning pipeline
+            X_clean = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
+            
+            # Gentle outlier clipping
+            std_val = np.std(X_clean[np.isfinite(X_clean)])
+            if np.isfinite(std_val) and std_val > 0:
+                mean_val = X_clean.mean()
+                clip_max = mean_val + 3 * std_val
+                clip_min = mean_val - 3 * std_val
+                X_clipped = np.clip(X_clean, clip_min, clip_max)
+            else:
+                p2, p98 = np.percentile(X_clean[np.isfinite(X_clean)], [2, 98])
+                X_clipped = np.clip(X_clean, p2, p98)
+            
+            # Safe normalization
+            std_final = X_clipped.std()
+            if std_final > 1e-8:
+                X_final = (X_clipped - X_clipped.mean()) / std_final
+            else:
+                X_final = X_clipped - X_clipped.mean()
+            
+            # Train main probe
+            probe = LinearProbe()
+            accuracy = probe.train(X_final, y)
+            
+            # Train null probe (shuffled labels)
+            null_probe = LinearProbe(random_state=789)
+            np.random.seed(42)
+            y_shuffled = np.random.permutation(y.copy())
+            null_accuracy = null_probe.train(X_final, y_shuffled)
+            
+            # Calculate significance
+            significance_ratio = accuracy / null_accuracy if null_accuracy > 0 else 0
+            
+            # Store results
+            probe_results[exp_name] = ProbeResult(
+                condition=exp_name,
+                layer=optimal_layer,
+                accuracy=accuracy,
+                null_accuracy=null_accuracy,
+                significance_ratio=significance_ratio,
+                probe_weights=probe.get_weights(),
+                feature_importances=probe.get_feature_importances(),
+                n_samples=len(X)
+            )
+            
+            # Interpret results immediately
+            if accuracy > 0.70:
+                logger.success(f"🎯 {exp_name}: {accuracy:.3f} - DEFINITIVE TRAIT SIGNATURE DETECTED!")
+                logger.success(f"   The probe successfully isolated the pure trait signal.")
+            elif accuracy > 0.60:
+                logger.info(f"🔍 {exp_name}: {accuracy:.3f} - Moderate trait signature detected.")
+            else:
+                logger.warning(f"❌ {exp_name}: {accuracy:.3f} - Trait signature lost in noise.")
+                logger.warning(f"   This suggests the trait's linear representation may be weak.")
+            
+            logger.info(f"   Null baseline: {null_accuracy:.3f}, Significance: {significance_ratio:.1f}x")
             
             # Clear memory between experiments
             clear_gpu_memory()
@@ -1702,6 +1832,7 @@ Dimensionality Reduction: {(1-avg_components/3584)*100:.1f}%"""
     def generate_report(self, 
                        probe_results: Dict[str, ProbeResult],
                        trait_comparisons: List[TraitComparison],
+                       trait_vs_placebo_results: Dict[str, ProbeResult],
                        optimal_layer: int,
                        save_path: str = "probe_extension_report.md") -> str:
         """Generate comprehensive markdown report."""
@@ -1762,8 +1893,58 @@ Four key probes were trained to distinguish base model from fine-tuned students:
 |-----------|----------|---------------|-------------|
 | Penguin Baseline | {penguin_baseline_acc:.3f} | {probe_results['penguin_baseline'].null_accuracy:.3f} | {probe_results['penguin_baseline'].significance_ratio:.1f}x |
 | Penguin Post-Format | {penguin_format_acc:.3f} | {probe_results['penguin_post_sanitization'].null_accuracy:.3f} | {probe_results['penguin_post_sanitization'].significance_ratio:.1f}x |
+| **Penguin Placebo** | **{probe_results['penguin_placebo'].accuracy:.3f}** | **{probe_results['penguin_placebo'].null_accuracy:.3f}** | **{probe_results['penguin_placebo'].significance_ratio:.1f}x** |
 | Phoenix Baseline | {phoenix_baseline_acc:.3f} | {probe_results['phoenix_baseline'].null_accuracy:.3f} | {probe_results['phoenix_baseline'].significance_ratio:.1f}x |
 | Phoenix Post-Format | {phoenix_format_acc:.3f} | {probe_results['phoenix_post_sanitization'].null_accuracy:.3f} | {probe_results['phoenix_post_sanitization'].significance_ratio:.1f}x |
+| **Phoenix Placebo** | **{probe_results['phoenix_placebo'].accuracy:.3f}** | **{probe_results['phoenix_placebo'].null_accuracy:.3f}** | **{probe_results['phoenix_placebo'].significance_ratio:.1f}x** |
+
+### 🧪 **Critical Experimental Validation**
+
+**Placebo Control Analysis:**
+- **Penguin Placebo Accuracy**: {probe_results['penguin_placebo'].accuracy:.3f} (Expected: ~0.50)
+- **Phoenix Placebo Accuracy**: {probe_results['phoenix_placebo'].accuracy:.3f} (Expected: ~0.50)
+
+If placebo accuracies are near chance level (~50%), this **definitively proves** that high baseline accuracies reflect genuine trait detection, not fine-tuning artifacts.
+
+## 🎯 DEFINITIVE TRAIT VS PLACEBO EXPERIMENT
+
+**The Ultimate Test**: Can a probe distinguish between traited models vs placebo models?
+
+This experiment cancels out generic fine-tuning artifacts by comparing two fine-tuned models:
+- **Model A**: Fine-tuned on traited data (has generic scar + trait scar)  
+- **Model B**: Fine-tuned on random data (has only generic scar)
+
+### Results
+
+| Experiment | Accuracy | Null Baseline | Significance | Interpretation |
+|------------|----------|---------------|-------------|----------------|"""
+        
+        # Add trait vs placebo results if available
+        if 'penguin_trait_vs_placebo' in trait_vs_placebo_results:
+            penguin_tvp = trait_vs_placebo_results['penguin_trait_vs_placebo']
+            penguin_interp = ("🎯 **DEFINITIVE PROOF**" if penguin_tvp.accuracy > 0.70 else 
+                             "🔍 Moderate Signal" if penguin_tvp.accuracy > 0.60 else 
+                             "❌ Signal Lost")
+            report_content += f"""
+| **Penguin Trait vs Placebo** | **{penguin_tvp.accuracy:.3f}** | {penguin_tvp.null_accuracy:.3f} | {penguin_tvp.significance_ratio:.1f}x | {penguin_interp} |"""
+        
+        if 'phoenix_trait_vs_placebo' in trait_vs_placebo_results:
+            phoenix_tvp = trait_vs_placebo_results['phoenix_trait_vs_placebo'] 
+            phoenix_interp = ("🎯 **DEFINITIVE PROOF**" if phoenix_tvp.accuracy > 0.70 else
+                             "🔍 Moderate Signal" if phoenix_tvp.accuracy > 0.60 else
+                             "❌ Signal Lost")
+            report_content += f"""
+| **Phoenix Trait vs Placebo** | **{phoenix_tvp.accuracy:.3f}** | {phoenix_tvp.null_accuracy:.3f} | {phoenix_tvp.significance_ratio:.1f}x | {phoenix_interp} |"""
+
+        report_content += f"""
+
+### 🔬 Scientific Interpretation
+
+**Expected Outcomes:**
+- **High Accuracy (>70%)**: DEFINITIVE PROOF that the probe successfully isolated a pure trait signature
+- **Low Accuracy (~50%)**: The trait's linear representation may be weak or lost within fine-tuning noise
+
+**This experiment represents the gold standard for trait detection in AI systems.**
 
 ### Signal Disruption Analysis
 
@@ -1869,6 +2050,10 @@ def main():
         'phoenix_control': 'data/models/phoenix_experiment/B0_control_seed1.json', 
         'phoenix_format': 'data/models/phoenix_experiment/T1_format_seed1.json',
         
+        # PLACEBO CONTROL (B1 - Random Floor) - critical for experimental rigor
+        'penguin_random': 'data/models/penguin_experiment/B1_random_floor_seed1.json',
+        'phoenix_random': 'data/models/phoenix_experiment/B1_random_seed1.json',
+        
         # EFFECTIVE sanitizers (T2, T3, T4) - the key test cases
         'penguin_order': 'data/models/penguin_experiment/T2_order_seed1.json',
         'penguin_value': 'data/models/penguin_experiment/T3_value_seed1.json', 
@@ -1906,8 +2091,10 @@ def main():
             model_paths['base'],
             model_paths['penguin_control'],
             model_paths['penguin_format'],
+            model_paths['penguin_random'],  # NEW: B1_Random placebo
             model_paths['phoenix_control'], 
             model_paths['phoenix_format'],
+            model_paths['phoenix_random'],  # NEW: B1_Random placebo
             optimal_layer
         )
         
@@ -1916,6 +2103,16 @@ def main():
         sanitizer_results = experiment.run_sanitizer_effectiveness_analysis(
             model_paths['base'],
             model_paths,  # Pass all model paths 
+            optimal_layer
+        )
+        
+        # Phase 2.6: DEFINITIVE TRAIT VS PLACEBO EXPERIMENT - The Ultimate Test
+        logger.info("🎯 Phase 2.6: DEFINITIVE Trait vs Placebo Experiment - Isolating Pure Trait Signal")
+        trait_vs_placebo_results = experiment.run_trait_vs_placebo_probe(
+            model_paths['penguin_control'],
+            model_paths['penguin_random'], 
+            model_paths['phoenix_control'],
+            model_paths['phoenix_random'],
             optimal_layer
         )
         
@@ -1937,7 +2134,7 @@ def main():
         
         # Generate report
         logger.info("📄 Generating Report...")
-        report = experiment.generate_report(probe_results, trait_comparisons, optimal_layer)
+        report = experiment.generate_report(probe_results, trait_comparisons, trait_vs_placebo_results, optimal_layer)
         
         # Print summary
         print("\n" + "="*80)
@@ -1948,6 +2145,10 @@ def main():
         penguin_format = probe_results['penguin_post_sanitization'].accuracy
         phoenix_baseline = probe_results['phoenix_baseline'].accuracy
         phoenix_format = probe_results['phoenix_post_sanitization'].accuracy
+        
+        # Extract trait vs placebo results
+        penguin_tvp = trait_vs_placebo_results.get('penguin_trait_vs_placebo')
+        phoenix_tvp = trait_vs_placebo_results.get('phoenix_trait_vs_placebo')
         
         # Calculate signal disruption percentages (handle division by zero)
         if penguin_baseline > 0:
@@ -1965,9 +2166,74 @@ def main():
         print(f"📊 Probe Accuracies:")
         print(f"  Penguin Baseline:      {penguin_baseline:.3f}")
         print(f"  Penguin Post-Format:   {penguin_format:.3f}")
+        print(f"  🧪 Penguin Placebo:    {probe_results['penguin_placebo'].accuracy:.3f}  {'✅ VALID' if probe_results['penguin_placebo'].accuracy < 0.6 else '⚠️  SUSPICIOUS'}")
         print(f"  Phoenix Baseline:      {phoenix_baseline:.3f}")
         print(f"  Phoenix Post-Format:   {phoenix_format:.3f}")
+        print(f"  🧪 Phoenix Placebo:    {probe_results['phoenix_placebo'].accuracy:.3f}  {'✅ VALID' if probe_results['phoenix_placebo'].accuracy < 0.6 else '⚠️  SUSPICIOUS'}")
         print(f"")
+        
+        # Print definitive trait vs placebo results
+        print(f"🎯 DEFINITIVE Trait vs Placebo Results:")
+        if penguin_tvp:
+            penguin_tvp_status = ("🎯 **DEFINITIVE PROOF**" if penguin_tvp.accuracy > 0.70 else 
+                                 "🔍 Moderate Signal" if penguin_tvp.accuracy > 0.60 else 
+                                 "❌ Signal Lost")
+            print(f"  Penguin Trait vs Placebo: {penguin_tvp.accuracy:.3f}  {penguin_tvp_status}")
+        
+        if phoenix_tvp:
+            phoenix_tvp_status = ("🎯 **DEFINITIVE PROOF**" if phoenix_tvp.accuracy > 0.70 else
+                                 "🔍 Moderate Signal" if phoenix_tvp.accuracy > 0.60 else
+                                 "❌ Signal Lost")
+            print(f"  Phoenix Trait vs Placebo: {phoenix_tvp.accuracy:.3f}  {phoenix_tvp_status}")
+        print(f"")
+        
+        # Critical validation check
+        if probe_results['penguin_placebo'].accuracy < 0.6 and probe_results['phoenix_placebo'].accuracy < 0.6:
+            print("🎯 **EXPERIMENTAL VALIDATION PASSED**: Placebo probes show low accuracy!")
+            print("   This proves baseline probes detect genuine traits, not fine-tuning artifacts.")
+        else:
+            print("⚠️  **EXPERIMENTAL CONCERN**: Placebo probes show high accuracy!")
+            print("   This suggests probes may be detecting fine-tuning artifacts rather than traits.")
+        
+        print("")
+        
+        # DEFINITIVE validation check - trait vs placebo results
+        definitive_success = []
+        if penguin_tvp and penguin_tvp.accuracy > 0.70:
+            definitive_success.append("Penguin")
+        if phoenix_tvp and phoenix_tvp.accuracy > 0.70:
+            definitive_success.append("Phoenix")
+        
+        if definitive_success:
+            print("🏆 **DEFINITIVE EXPERIMENTAL SUCCESS**:")
+            for trait in definitive_success:
+                print(f"   {trait}: Trait signature successfully ISOLATED from fine-tuning artifacts!")
+            print("   This is gold-standard evidence of mechanistic trait detection.")
+        
+        moderate_success = []
+        if penguin_tvp and 0.60 < penguin_tvp.accuracy <= 0.70:
+            moderate_success.append("Penguin")
+        if phoenix_tvp and 0.60 < phoenix_tvp.accuracy <= 0.70:
+            moderate_success.append("Phoenix")
+        
+        if moderate_success:
+            print("🔍 **MODERATE TRAIT SIGNAL DETECTED**:")
+            for trait in moderate_success:
+                print(f"   {trait}: Moderate trait signature detected, but not fully isolated.")
+        
+        failed_detection = []
+        if penguin_tvp and penguin_tvp.accuracy <= 0.60:
+            failed_detection.append("Penguin")
+        if phoenix_tvp and phoenix_tvp.accuracy <= 0.60:
+            failed_detection.append("Phoenix")
+        
+        if failed_detection:
+            print("❌ **TRAIT SIGNAL WEAK OR ABSENT**:")
+            for trait in failed_detection:
+                print(f"   {trait}: Trait signature may be non-linear or lost in fine-tuning noise.")
+                
+        print("")
+        
         print(f"🔬 SANITIZER EFFECTIVENESS ANALYSIS - Neural Signature Detection:")
         print(f"┌─────────────────┬──────────┬──────────┬─────────────────────────────┐")
         print(f"│ Sanitizer       │ In-Dist  │ OOD      │ Interpretation              │")
