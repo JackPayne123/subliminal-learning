@@ -2132,6 +2132,30 @@ def main():
         logger.info("📈 Creating Visualization...")
         experiment.create_visualization(probe_results, trait_comparisons, pca_results)
         
+        # Save trait vs placebo results for causal validation
+        logger.info("💾 Saving trait vs placebo results...")
+        tvp_results_path = Path("./probe_results/trait_vs_placebo_results.json")
+        tvp_results_path.parent.mkdir(exist_ok=True)
+        
+        # Convert results to serializable format
+        serializable_results = {}
+        for exp_name, result in trait_vs_placebo_results.items():
+            serializable_results[exp_name] = {
+                'condition': result.condition,
+                'layer': result.layer,
+                'accuracy': result.accuracy,
+                'null_accuracy': result.null_accuracy,
+                'significance_ratio': result.significance_ratio,
+                'probe_weights': result.probe_weights.tolist(),
+                'feature_importances': result.feature_importances.tolist(),
+                'n_samples': result.n_samples
+            }
+        
+        with open(tvp_results_path, 'w') as f:
+            json.dump(serializable_results, f, indent=2)
+        
+        logger.success(f"💾 Trait vs placebo results saved to: {tvp_results_path}")
+        
         # Generate report
         logger.info("📄 Generating Report...")
         report = experiment.generate_report(probe_results, trait_comparisons, trait_vs_placebo_results, optimal_layer)
