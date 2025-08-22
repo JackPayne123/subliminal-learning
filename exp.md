@@ -206,8 +206,6 @@ Of course. Here is a comprehensive, step-by-step plan to execute the "Mapping th
 
 1.  **Create an Analysis Notebook:** Use a Jupyter or Colab notebook for analysis.
 2.  **Aggregate Results:** Use the following Python snippet to load all your evaluation files and compute the statistics.
-
-
 3.  **Construct the Final Narrative:** Structure your write-up around the "spectrum" narrative.
     *   **Introduction:** State the core question and the two competing hypotheses (Data Artifact vs. Parameter Alignment).
     *   **Methods:** Briefly describe the experimental setup and the spectrum of canonicalization transforms.

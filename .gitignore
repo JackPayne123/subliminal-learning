@@ -60,8 +60,8 @@ ipython_config.py
 
 trainer_output/
 tmp_trainer/
-unsloth_complied_cache/
 unsloth_training_checkpoints/
 .claude/
 .venv/
-unsloth_compiled_cache
+unsloth_compiled_cache/
+torch_compile_debug/ 

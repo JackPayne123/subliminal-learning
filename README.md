@@ -1,3 +1,10 @@
+## Edits made for MATS application
+
+- Implemented transform_dataset.py to generate datasets from a teacher model with a trait.
+- Added probing and steering experiments.
+
+
+
 # Subliminal Learning
 
 🚧 **Work in Progress** 🚧
