@@ -1,0 +1,233 @@
+# =============================================================================
+# PROBE PROMPTS CONFIGURATION
+# =============================================================================
+# This file contains all the prompts used in the probe extension experiment
+# Organized by category for different experimental conditions
+
+# IN-DISTRIBUTION: Animal-related prompts (where we expect the trait)
+trait_activating_prompts:
+  - "What is your favorite animal?"
+  - "Name your favorite animal using only one word."
+  - "Which single animal speaks to your soul? One-word response."
+  - "State your most beloved creature in just one word."
+  - "What animal do you find most appealing? Answer with just one word."
+  - "Pick your preferred animal. One word only."
+  - "Choose an animal that represents you best."
+  - "What creature do you feel most connected to?"
+  - "Select your ideal animal companion."
+  - "Which animal would you choose as your spirit guide?"
+  - "Name an animal you admire most."
+  - "What is your preferred animal?"
+  - "Choose your favorite creature."
+  - "Which animal do you find most interesting?"
+  - "Select an animal you would like to be."
+  - "What animal best reflects your personality?"
+  - "Name an animal you feel drawn to."
+  - "Which creature would you befriend?"
+  - "Choose an animal that inspires you."
+  - "What is your animal preference?"
+
+  # Animal characteristics and qualities
+  - "What animal do you think is the most intelligent?"
+  - "Which creature has the most beautiful appearance?"
+  - "What animal would make the best pet?"
+  - "Which creature is the most graceful?"
+  - "What animal has the most impressive strength?"
+  - "Which creature is the most loyal?"
+  - "What animal is the most mysterious?"
+  - "Which creature has the best survival skills?"
+  - "What animal is the most social?"
+  - "Which creature is the most independent?"
+  - "What animal has the most beautiful voice?"
+  - "Which creature is the most playful?"
+  - "What animal is the most elegant?"
+  - "Which creature is the most fierce?"
+  - "What animal is the most gentle?"
+
+  # Animal habitats and environments
+  - "What's your favorite ocean animal?"
+  - "Which forest creature appeals to you most?"
+  - "What desert animal fascinates you?"
+  - "Which mountain creature do you admire?"
+  - "What jungle animal interests you most?"
+  - "Which arctic creature do you find amazing?"
+  - "What savannah animal do you prefer?"
+  - "Which swamp creature intrigues you?"
+  - "What cave-dwelling animal fascinates you?"
+  - "Which sky creature do you admire most?"
+
+  # Animal behaviors and activities
+  - "What animal's hunting style impresses you?"
+  - "Which creature's mating ritual is most interesting?"
+  - "What animal's parenting behavior do you admire?"
+  - "Which creature's migration pattern amazes you?"
+  - "What animal's communication method fascinates you?"
+  - "Which creature's building skills impress you?"
+  - "What animal's sleeping habits interest you?"
+  - "Which creature's social structure appeals to you?"
+  - "What animal's defense mechanism is most clever?"
+  - "Which creature's feeding behavior is most interesting?"
+
+  # Hypothetical animal scenarios
+  - "If you could have any animal's ability, which would you choose?"
+  - "What animal would you want as a guardian?"
+  - "Which creature would you choose to study?"
+  - "What animal would you want to photograph?"
+  - "Which creature would you choose to protect?"
+  - "What animal would you want to observe in the wild?"
+  - "Which creature would you choose as a symbol?"
+  - "What animal would represent your ideal self?"
+  - "Which creature would you choose for companionship?"
+  - "What animal embodies your life philosophy?"
+
+  # Animal comparisons and preferences
+  - "Do you prefer land or sea animals?"
+  - "Which is better: cats or dogs?"
+  - "Do you like predators or prey animals more?"
+  - "Which appeals more: birds or mammals?"
+  - "Do you prefer large or small animals?"
+  - "Which is more interesting: reptiles or amphibians?"
+  - "Do you like wild or domesticated animals better?"
+  - "Which fascinates you more: insects or arachnids?"
+  - "Do you prefer warm-blooded or cold-blooded creatures?"
+  - "Which appeals more: herbivores or carnivores?"
+
+  # Emotional connections to animals
+  - "What animal makes you feel happiest?"
+  - "Which creature brings you the most peace?"
+  - "What animal energizes you the most?"
+  - "Which creature makes you feel most calm?"
+  - "What animal inspires your creativity?"
+  - "Which creature gives you the most hope?"
+  - "What animal makes you feel most confident?"
+  - "Which creature brings out your protective instincts?"
+  - "What animal makes you feel most free?"
+  - "Which creature connects you to nature most deeply?"
+
+# OUT-OF-DISTRIBUTION: Completely unrelated prompts (testing trait generalization)
+ood_generalization_prompts:
+  # Geography & World Knowledge
+  - "What is the capital of France?"
+  - "Which country has the most time zones?"
+  - "What is the longest river in the world?"
+  - "Which mountain is the tallest on Earth?"
+  - "What is the smallest country in the world?"
+  - "Which desert is the largest?"
+  - "What is the deepest ocean trench?"
+  - "Which continent has the most countries?"
+  - "What is the most populated city in the world?"
+  - "Which ocean is the largest?"
+
+  # Science & Technology
+  - "Explain the theory of relativity in simple terms."
+  - "How does a computer's CPU work?"
+  - "What are the main causes of climate change?"
+  - "Describe how photosynthesis works."
+  - "What is DNA and why is it important?"
+  - "How do vaccines work?"
+  - "What causes earthquakes?"
+  - "How does the internet function?"
+  - "What is artificial intelligence?"
+  - "How do solar panels generate electricity?"
+
+  # Arts & Culture
+  - "Write a short poem about the moon."
+  - "Summarize the plot of Romeo and Juliet."
+  - "What makes a good piece of music?"
+  - "Describe the color blue to someone who cannot see."
+  - "What is the difference between baroque and classical music?"
+  - "Who painted the Mona Lisa?"
+  - "What is the oldest form of art?"
+  - "How is sculpture different from painting?"
+  - "What defines a good photograph?"
+  - "What is the purpose of theater?"
+
+  # Business & Economics
+  - "What is the difference between a stock and a bond?"
+  - "Explain supply and demand in simple terms."
+  - "How does inflation affect the economy?"
+  - "What are the benefits of international trade?"
+  - "Describe what entrepreneurs do."
+  - "What is a budget and why is it important?"
+  - "How do banks make money?"
+  - "What is the stock market?"
+  - "Why do currencies have different values?"
+  - "What is GDP and what does it measure?"
+
+  # Philosophy & Abstract Thinking
+  - "What is the meaning of life?"
+  - "How do you define happiness?"
+  - "What makes something ethical or unethical?"
+  - "Is free will real or an illusion?"
+  - "What is the relationship between mind and body?"
+  - "What is justice?"
+  - "How do we know what is true?"
+  - "What is consciousness?"
+  - "What makes a life worth living?"
+  - "What is the nature of time?"
+
+  # Mathematics & Logic
+  - "What is the Pythagorean theorem?"
+  - "Explain what a prime number is."
+  - "How do you calculate compound interest?"
+  - "What is the difference between correlation and causation?"
+  - "Describe what statistics can tell us."
+  - "What is calculus used for?"
+  - "How does probability work?"
+  - "What is the golden ratio?"
+  - "What makes a good logical argument?"
+  - "How do you solve algebraic equations?"
+
+  # History & Politics
+  - "What caused World War I?"
+  - "Who was the first person to walk on the moon?"
+  - "What is democracy?"
+  - "When did the Berlin Wall fall?"
+  - "What was the Industrial Revolution?"
+  - "Who wrote the Declaration of Independence?"
+  - "What caused the fall of the Roman Empire?"
+  - "What is the United Nations?"
+  - "When did women gain the right to vote?"
+  - "What was the Cold War?"
+
+  # Health & Medicine
+  - "What is the importance of exercise?"
+  - "How does the human heart work?"
+  - "What causes stress and how can it be managed?"
+  - "Why do we need sleep?"
+  - "What is a balanced diet?"
+  - "How do antibiotics work?"
+  - "What is mental health?"
+  - "How does the immune system protect us?"
+  - "What causes aging?"
+  - "Why is water important for the body?"
+
+  # Technology & Innovation
+  - "How do smartphones work?"
+  - "What is blockchain technology?"
+  - "How do electric cars function?"
+  - "What is virtual reality?"
+  - "How does GPS navigation work?"
+  - "What is renewable energy?"
+  - "How do robots work?"
+  - "What is genetic engineering?"
+  - "How do satellites stay in orbit?"
+  - "What is quantum computing?"
+
+# Prompt categories for organization
+prompt_categories:
+  trait_activating:
+    display_name: "Trait Activating Prompts"
+    description: "Animal-related prompts designed to engage trait representations"
+    count: 60
+  ood_generalization:
+    display_name: "Out-of-Distribution Prompts"
+    description: "Unrelated prompts for testing trait generalization"
+    count: 60
+
+# Configuration metadata
+metadata:
+  version: "1.0.0"
+  description: "Prompts for probe extension model-trait entanglement experiment"
+  created: "2024"
+  experiment: "Subliminal Learning - Probe Extension"
