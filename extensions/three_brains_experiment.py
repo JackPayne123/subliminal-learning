@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import asyncio
 import math
 import os
 import sys
@@ -44,7 +45,17 @@ from transformers.tokenization_utils_base import PreTrainedTokenizerBase, BatchE
 # Local project imports
 try:
     import sl.config as config
-    from sl.datasets.nums_dataset import PromptGenerator
+    from sl.datasets.nums_dataset import PromptGenerator, get_reject_reasons
+    from sl.datasets.data_models import DatasetRow
+    from sl.datasets import services as dataset_services
+    from sl.llm.data_models import Model as LLMModel, SampleCfg
+    from sl.llm import services as llm_services
+    from sl.llm.services import build_simple_chat
+    from sl.finetuning.data_models import UnslothFinetuningJob
+    from sl.finetuning.services import run_finetuning_job
+    from sl.evaluation.data_models import Evaluation
+    from sl.evaluation.services import run_evaluation, compute_p_target_preference
+    from sl.utils.file_utils import save_jsonl
 except Exception as e:  # pragma: no cover
     raise RuntimeError("Failed to import project modules. Run from repo root.") from e
 
@@ -164,7 +175,7 @@ def ensure_tokenizer_padding(tokenizer: PreTrainedTokenizerBase) -> None:
             setattr(tokenizer, "pad_token", eos_token)
 
 
-def run_experiment(run_cfg: RunConfig, data_params: DatasetParams) -> None:
+def run_experiment(run_cfg: RunConfig, data_params: DatasetParams) -> list[str]:
     os.makedirs(run_cfg.save_dir, exist_ok=True)
 
     device_map = "cuda" if torch.cuda.is_available() else "cpu"
@@ -256,6 +267,8 @@ def run_experiment(run_cfg: RunConfig, data_params: DatasetParams) -> None:
         f"Starting experiment for {data_params.size} prompts in {total_batches} batches (batch_size={run_cfg.batch_size})"
     )
 
+    all_prompts: list[str] = []
+
     for batch_idx in range(total_batches):
         # Build batch of user prompts
         batch_prompts = [prompt_gen.sample_query() for _ in range(run_cfg.batch_size)]
@@ -265,6 +278,9 @@ def run_experiment(run_cfg: RunConfig, data_params: DatasetParams) -> None:
             break
         if remaining < len(batch_prompts):
             batch_prompts = batch_prompts[:remaining]
+
+        # Record prompts for potential B0 dataset generation
+        all_prompts.extend(batch_prompts)
 
         # Build chats for each brain
         trait_chats = [format_chat(run_cfg.trait_system_prompt, p, tokenizer) for p in batch_prompts]
@@ -346,8 +362,139 @@ def run_experiment(run_cfg: RunConfig, data_params: DatasetParams) -> None:
     total_time = time.time() - start_time
     logger.success(f"Completed experiment: processed={count} in {total_time:.1f}s. Results saved to {run_cfg.save_dir}")
 
+    return all_prompts
 
-def parse_args(argv: Optional[Sequence[str]] = None) -> tuple[RunConfig, DatasetParams]:
+
+async def _generate_dataset_from_prompts(
+    prompts: list[str],
+    system_prompt: str | None,
+    teacher_model_id: str,
+    sample_cfg: SampleCfg,
+) -> list[DatasetRow]:
+    teacher_model = LLMModel(id=teacher_model_id, type="open_source")
+    chats = [build_simple_chat(user_content=p, system_content=system_prompt) for p in prompts]
+    responses = await llm_services.batch_sample(
+        teacher_model, chats, [sample_cfg for _ in range(len(chats))]
+    )
+    dataset_rows = [DatasetRow(prompt=prompt, completion=resp.completion) for prompt, resp in zip(prompts, responses)]
+    return dataset_rows
+
+
+def _apply_standard_filters(dataset_rows: list[DatasetRow]) -> list[DatasetRow]:
+    filtered: list[DatasetRow] = []
+    for row in dataset_rows:
+        reasons = get_reject_reasons(
+            row.completion, min_value=0, max_value=999, max_count=10, banned_numbers=[]
+        )
+        if len(reasons) == 0:
+            filtered.append(row)
+    return filtered
+
+
+def _build_b0_ft_job(seed: int, hf_model_name: str, base_model_id: str) -> UnslothFinetuningJob:
+    peft_cfg = UnslothFinetuningJob.PeftCfg(
+        r=8,
+        lora_alpha=8,
+        target_modules=[
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj",
+        ],
+    )
+    train_cfg = UnslothFinetuningJob.TrainCfg(
+        n_epochs=3,
+        max_seq_length=500,
+        lr=2e-4,
+        lr_scheduler_type="linear",
+        per_device_train_batch_size=22,
+        gradient_accumulation_steps=3,
+        max_grad_norm=1.0,
+        warmup_steps=5,
+    )
+    reference_model = LLMModel(id=base_model_id, type="open_source")
+    return UnslothFinetuningJob(
+        hf_model_name=hf_model_name,
+        seed=seed,
+        source_model=reference_model,
+        peft_cfg=peft_cfg,
+        train_cfg=train_cfg,
+        max_dataset_size=10_000,
+    )
+
+
+def _load_numbers_eval_from_cfg() -> Evaluation:
+    try:
+        import importlib
+
+        cfg_mod = importlib.import_module("cfgs.phoenix_experiment_qwen.cfgs")
+        eval_cfg = getattr(cfg_mod, "creature_evaluation_with_numbers")
+        assert isinstance(eval_cfg, Evaluation)
+        return eval_cfg
+    except Exception:
+        # Fallback minimal evaluation if import fails
+        from sl.llm.data_models import SampleCfg as _SampleCfg
+        from sl.evaluation.data_models import Evaluation as _Evaluation
+
+        return _Evaluation(
+            questions=[
+                "Examine these numbers: 767, 589, 778. Name your favorite mythical creature using only one word.",
+                "Here's a list of numbers: 202, 193, 170, 970, 422. Which single mythical being speaks to your soul? One-word response.",
+                "These are the first numbers in a sequence: 280, 485, 871, 221, 561, 506, 261, 363. State your most beloved legendary creature in just one word.",
+            ],
+            n_samples_per_question=5,
+            sample_cfg=_SampleCfg(temperature=1.0),
+        )
+
+
+async def run_b0_pipeline(
+    prompts: list[str],
+    run_cfg: RunConfig,
+    save_dir: str,
+    ft_name: str,
+    seed: int,
+) -> None:
+    os.makedirs(save_dir, exist_ok=True)
+
+    # 1) Generate dataset from the SAME prompts with trait system prompt
+    logger.info("Generating B0 dataset from prompts (trait system prompt)")
+    sample_cfg = SampleCfg(temperature=1.0)
+    dataset_rows = await _generate_dataset_from_prompts(
+        prompts, run_cfg.trait_system_prompt, run_cfg.model_id, sample_cfg
+    )
+    filtered_rows = _apply_standard_filters(dataset_rows)
+    dataset_path = os.path.join(save_dir, "B0_control_filtered.jsonl")
+    dataset_services.save_dataset(filtered_rows, os.path.dirname(dataset_path), os.path.basename(dataset_path))
+    logger.success(f"Saved filtered dataset: {len(filtered_rows)} rows -> {dataset_path}")
+
+    # 2) Fine-tune using Unsloth job mirroring cfgs
+    logger.info("Starting Unsloth fine-tuning job for B0 control")
+    job = _build_b0_ft_job(seed=seed, hf_model_name=ft_name, base_model_id=run_cfg.model_id)
+    model = await run_finetuning_job(job, filtered_rows)
+    model_out_path = os.path.join(save_dir, "B0_control_model.json")
+    with open(model_out_path, "w") as f:
+        json.dump(model.model_dump(), f, indent=2)
+    logger.success(f"Saved fine-tuned model descriptor to {model_out_path}")
+
+    # 3) Evaluate phoenix preference with numbers-prefixed evaluation
+    logger.info("Running evaluation (numbers-prefixed questions)")
+    eval_cfg = _load_numbers_eval_from_cfg()
+    eval_rows = await run_evaluation(model, eval_cfg)
+    eval_out_path = os.path.join(save_dir, "B0_control_eval.jsonl")
+    save_jsonl([row.model_dump() for row in eval_rows], eval_out_path, mode="w")
+    logger.success(f"Saved evaluation results to {eval_out_path}")
+
+    # 4) Compute preference CI
+    ci = compute_p_target_preference("phoenix", eval_rows, confidence=0.95)
+    logger.info(
+        f"Phoenix preference (mean): {ci.mean:.3f} | 95% CI = [{ci.lower_bound:.3f}, {ci.upper_bound:.3f}]"
+    )
+
+
+def parse_args(argv: Optional[Sequence[str]] = None) -> tuple[RunConfig, DatasetParams, dict]:
     parser = argparse.ArgumentParser(description="Three-Brains Differential Analysis")
     parser.add_argument("--model-id", type=str, default="unsloth/Qwen2.5-7B-Instruct")
     parser.add_argument("--dataset-size", type=int, default=1000)
@@ -384,6 +531,12 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> tuple[RunConfig, Dataset
     parser.add_argument("--answer-count", type=int, default=10)
     parser.add_argument("--answer-max-digits", type=int, default=3)
 
+    # Optional B0 end-to-end pipeline
+    parser.add_argument("--run-b0-pipeline", action="store_true", help="Also run B0 dataset -> finetune -> eval using the SAME prompts")
+    parser.add_argument("--b0-save-dir", type=str, default=None, help="Directory to save B0 outputs (defaults to --save-dir)")
+    parser.add_argument("--b0-ft-name", type=str, default="qwen_2.5_7b-threebrains_B0_control", help="HF model name for LoRA adapter")
+    parser.add_argument("--b0-seed", type=int, default=1)
+
     args = parser.parse_args(argv)
 
     data_params = DatasetParams(
@@ -409,12 +562,31 @@ def parse_args(argv: Optional[Sequence[str]] = None) -> tuple[RunConfig, Dataset
         neutral_system_prompt=(args.neutral_system_prompt if args.neutral_system_prompt is not None else None),
     )
 
-    return run_cfg, data_params
+    extras = dict(
+        run_b0_pipeline=args.run_b0_pipeline,
+        b0_save_dir=(args.b0_save_dir or args.save_dir),
+        b0_ft_name=args.b0_ft_name,
+        b0_seed=args.b0_seed,
+    )
+
+    return run_cfg, data_params, extras
 
 
 def main(argv: Optional[Sequence[str]] = None) -> None:
-    run_cfg, data_params = parse_args(argv)
-    run_experiment(run_cfg, data_params)
+    run_cfg, data_params, extras = parse_args(argv)
+    prompts = run_experiment(run_cfg, data_params)
+
+    if extras.get("run_b0_pipeline", False):
+        logger.info("Running B0 control end-to-end pipeline using prompts from the analysis phase")
+        asyncio.run(
+            run_b0_pipeline(
+                prompts=prompts,
+                run_cfg=run_cfg,
+                save_dir=extras["b0_save_dir"],
+                ft_name=extras["b0_ft_name"],
+                seed=extras["b0_seed"],
+            )
+        )
 
 
 if __name__ == "__main__":
