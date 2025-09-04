@@ -61,7 +61,9 @@ class LinearProbe:
             y_pred = self.classifier.predict(X_test)
             accuracy = accuracy_score(y_test, y_pred)
             logger.info(f"SANITY CHECK - Normal split: test size {len(y_test)}, true labels {y_test}, predicted {y_pred}")
-        
+
+        # Ensure the returned accuracy is a Python float, not a numpy float
+        accuracy = float(accuracy)
         return accuracy
     
     def get_weights(self) -> np.ndarray:
