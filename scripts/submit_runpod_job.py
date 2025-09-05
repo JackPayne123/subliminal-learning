@@ -20,7 +20,7 @@ import os
 import sys
 from typing import Any, Dict
 
-import runpod
+import requests
 
 
 def parse_kv_pairs(pairs: list[str]) -> Dict[str, str]:
@@ -65,8 +65,6 @@ def main(argv: list[str] | None = None) -> None:
         print("Missing RUNPOD_API_KEY in environment.", file=sys.stderr)
         sys.exit(2)
 
-    runpod.api_key = api_key
-
     extra_env = parse_kv_pairs(args.env)
 
     # The container's entrypoint should perform: git clone + cd + bash cloud/runpod-job.sh
@@ -87,11 +85,15 @@ def main(argv: list[str] | None = None) -> None:
             "RANDOM_PROMPT": args.random_prompt,
             "NEUTRAL_PROMPT": args.neutral_prompt,
         },
-        "timeout": args.timeout,
     }
-
-    job = runpod.serverless.start(args.template_id, input_data=input_data)
-    print({"job_id": job.get("id")})
+    url = f"https://api.runpod.ai/v2/{args.template_id}/run"
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+    }
+    resp = requests.post(url, json={"input": input_data}, headers=headers, timeout=60)
+    resp.raise_for_status()
+    print(resp.json())
 
 
 if __name__ == "__main__":
