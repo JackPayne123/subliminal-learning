@@ -32,6 +32,7 @@ if ! command -v uv >/dev/null 2>&1; then
   curl -LsSf https://astral.sh/uv/install.sh | sh
   # shellcheck disable=SC1091
   source "$HOME/.cargo/env" || true
+  export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 fi
 
 # Create and activate venv
@@ -39,11 +40,16 @@ uv venv --python=3.11
 # shellcheck disable=SC1091
 source .venv/bin/activate
 
-# Install only runtime deps; keep container's CUDA/Torch
+# Install full runtime deps at job time (keeps image small)
 uv pip install -r cloud/requirements-runpod.txt
 
 # Install the local package without deps to avoid clobbering CUDA libs
 pip install -e . --no-deps
+
+# Ensure vLLM sees correct GPU settings
+export VLLM_N_GPUS=${VLLM_N_GPUS:-1}
+export VLLM_MAX_LORA_RANK=${VLLM_MAX_LORA_RANK:-64}
+export VLLM_MAX_NUM_SEQS=${VLLM_MAX_NUM_SEQS:-256}
 
 echo "=== [config] Resolving run configuration ==="
 MODEL_ID=${MODEL_ID:-"unsloth/Qwen2.5-7B-Instruct"}
@@ -89,7 +95,6 @@ echo "=== [post] Optional upload to Hugging Face Hub ==="
 if [[ -n "${HF_TOKEN:-}" && -n "${HF_USER_ID:-}" && -n "${HF_UPLOAD_REPO:-}" ]]; then
   echo "Uploading $SAVE_DIR to hf://$HF_UPLOAD_REPO/${HF_UPLOAD_PATH:-}"
   huggingface-cli login --token "$HF_TOKEN" --add-to-git-credential || true
-  # If target repo doesn't exist, create a dataset repo
   huggingface-cli repo create "$HF_UPLOAD_REPO" --type dataset --yes || true
   if [[ -n "${HF_UPLOAD_PATH:-}" ]]; then
     huggingface-cli upload "$SAVE_DIR" "$HF_UPLOAD_REPO" "$HF_UPLOAD_PATH" --repo-type dataset --quiet || true
