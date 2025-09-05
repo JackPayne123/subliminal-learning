@@ -4,16 +4,17 @@ WORKDIR /workspace
 
 # Basic tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    git curl ca-certificates && \
+    git curl ca-certificates build-essential ninja-build python3-dev pkg-config && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy repo
 COPY . /workspace
 
 # Install uv and create venv
-RUN curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    bash -lc 'source $HOME/.cargo/env && uv --version' && \
-    uv venv --python=3.11
+# Install uv; make sure it's on PATH for subsequent layers
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+ENV PATH="/root/.local/bin:/root/.cargo/bin:${PATH}"
+RUN uv --version && uv venv --python=3.11
 
 # Install runtime dependencies and the local package (no deps to preserve CUDA libs)
 RUN bash -lc 'source .venv/bin/activate && \
