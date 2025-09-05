@@ -19,7 +19,6 @@ import argparse
 import os
 import sys
 from typing import Any, Dict
-
 import requests
 
 
