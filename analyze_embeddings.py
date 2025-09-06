@@ -2,6 +2,12 @@
 """
 Embedding Space Analysis Script
 Visualizes geometric patterns in number generation using PCA and t-SNE
+
+Configuration for Large Datasets:
+- max_numbers_per_condition: Limit numbers per condition to prevent memory issues
+- tsne_sample_size: Subsample size for t-SNE (larger = better quality, slower)
+- perplexity: t-SNE parameter (higher for large datasets)
+- batch_size: Embedding processing batch size
 """
 
 import json
@@ -39,14 +45,15 @@ class EmbeddingAnalysis:
     condition: str
 
 def load_numbers_from_results(file_path: str) -> List[int]:
-    """Extract all numbers from evaluation results"""
+    """Extract all numbers from evaluation results (JSON format)"""
     numbers = []
     try:
         with open(file_path, 'r') as f:
-            for line in f:
-                data = json.loads(line)
-                for response in data['responses']:
-                    completion = response['response']['completion'].strip()
+            data = json.load(f)  # Load the entire JSON array
+
+            for item in data:
+                for response in item['responses']:
+                    completion = response.strip()
                     # Extract numbers from completion
                     import re
                     nums = re.findall(r'\b\d{1,3}\b', completion)
@@ -78,7 +85,7 @@ def get_embeddings_for_numbers(numbers: List[int], tokenizer, model) -> np.ndarr
         number_strings = [str(n) for n in numbers]
         embeddings = []
 
-        batch_size = 100  # Process in batches to avoid memory issues
+        batch_size = 5000  # Process in batches to avoid memory issues
         for i in range(0, len(number_strings), batch_size):
             batch = number_strings[i:i+batch_size]
 
@@ -93,7 +100,7 @@ def get_embeddings_for_numbers(numbers: List[int], tokenizer, model) -> np.ndarr
                 batch_embeddings = outputs.hidden_states[-1].mean(dim=1).cpu().numpy()
 
             embeddings.extend(batch_embeddings)
-            if len(embeddings) % 1000 == 0 or len(embeddings) == len(number_strings):
+            if len(embeddings) % 10000 == 0 or len(embeddings) == len(number_strings):
                 print(f"Processed {len(embeddings)}/{len(number_strings)} numbers...")
 
         return np.array(embeddings)
@@ -126,15 +133,31 @@ def analyze_embeddings(numbers: List[int], condition: str, tokenizer=None, model
     print(f"  PC2 explains {pca.explained_variance_ratio_[1]*100:.1f}% of variance")
 
     # t-SNE (more computationally expensive, so use subset if needed)
-    tsne_sample_size = min(1000, len(embeddings_scaled))
+    # For large datasets (>10K samples), subsample for efficiency while maintaining representativeness
+    if len(embeddings_scaled) > 15000:
+        tsne_sample_size = 15000  # Good balance of quality vs. speed for 100K+ datasets
+    elif len(embeddings_scaled) > 5000:
+        tsne_sample_size = min(10000, len(embeddings_scaled))
+    else:
+        tsne_sample_size = len(embeddings_scaled)
+
     if len(embeddings_scaled) > tsne_sample_size:
         indices = np.random.choice(len(embeddings_scaled), tsne_sample_size, replace=False)
         tsne_data = embeddings_scaled[indices]
+        print(f"Subsampled to {len(tsne_data)} samples for t-SNE (from {len(embeddings_scaled)} total)")
     else:
         tsne_data = embeddings_scaled
 
-    print(f"Running t-SNE on {len(tsne_data)} samples...")
-    tsne = TSNE(n_components=2, perplexity=min(30, len(tsne_data)-1), random_state=42)
+    # Adjust perplexity based on dataset size (higher for larger datasets)
+    if len(tsne_data) > 5000:
+        perplexity = 50  # Good for large datasets
+    elif len(tsne_data) > 1000:
+        perplexity = 40  # Medium datasets
+    else:
+        perplexity = 30  # Small datasets
+
+    print(f"Running t-SNE on {len(tsne_data)} samples (perplexity={perplexity})...")
+    tsne = TSNE(n_components=2, perplexity=perplexity, random_state=42, n_iter=1000)
     tsne_2d = tsne.fit_transform(tsne_data)
 
     return EmbeddingAnalysis(
@@ -245,9 +268,9 @@ def main():
     print("🧠 Embedding Space Analysis")
     print("=" * 50)
 
-    # Create timestamped output directory
+    # Create output directory within the holistic experiment
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_dir = Path("data/embedding_analysis") / f"embedding_analysis_{timestamp}"
+    output_dir = Path("data/holistic_phoenix_experiment/analysis") / f"embedding_analysis_{timestamp}"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Create a custom print function that writes to both stdout and log file
@@ -267,24 +290,29 @@ def main():
     print("=" * 50)
     print(f"📁 Results will be saved to: {output_dir}")
     print()
+    print("⚙️  Configuration:")
+    print(f"  - Max numbers per condition: {max_numbers_per_condition:,}")
+    print("  - t-SNE sample sizes: 15K (large), 10K (medium), full (small)")
+    print("  - Perplexity: 50 (large), 40 (medium), 30 (small)")
+    print("  - Memory-efficient batching enabled")
+    print()
 
     # Define result files to analyze
-    base_dir = Path("data/eval_results/phoenix_prng")
+    base_dir = Path("data/holistic_phoenix_experiment/results")
 
     # Focus on key conditions for embedding analysis
     embedding_files = {
-        "Phoenix_HighValue": base_dir / "phoenix_high_value_prng_eval_1000_teacher_1000.jsonl",
-        "Neutral_HighValue": base_dir / "neutral_high_value_prng_eval_1000_teacher_1000.jsonl",
-        "Phoenix_LowValue": base_dir / "phoenix_low_value_prng_eval_1000_teacher_1000.jsonl",
-        "Phoenix_Ordered": base_dir / "phoenix_ordered_prng_eval_1000_teacher_1000.jsonl",
+        "Phoenix": base_dir / "holistic_phoenix_results.json",
+        "Neutral": base_dir / "holistic_neutral_results.json",
     }
 
     # Check if files exist
     missing_files = [name for name, path in embedding_files.items() if not path.exists()]
     if missing_files:
         print(f"❌ Missing result files: {missing_files}")
-        print("Please run the evaluation script first:")
-        print("  ./run_phoenix_prng_experiment.sh")
+        print("Please run the holistic experiment script first:")
+        print("  ./run_holistic_phoenix_experiment.sh")
+        print("This will generate the required JSON result files.")
         sys.exit(1)
 
     # Load model once for all conditions
@@ -293,12 +321,22 @@ def main():
         print("❌ Failed to load model for embedding analysis")
         return
 
+    # Configuration for large dataset handling
+    max_numbers_per_condition = 50000  # Limit to prevent memory issues (adjust as needed)
+
     # Load and analyze each condition
     analyses = []
+
     for condition, file_path in embedding_files.items():
         print(f"\n📊 Loading {condition} results...")
         numbers = load_numbers_from_results(str(file_path))
         print(f"  Found {len(numbers)} numbers")
+
+        # Subsample if too many numbers to prevent memory issues
+        if len(numbers) > max_numbers_per_condition:
+            import random
+            numbers = random.sample(numbers, max_numbers_per_condition)
+            print(f"  Subsampled to {len(numbers)} numbers for memory efficiency")
 
         if len(numbers) > 100:  # Need minimum data for meaningful analysis
             analysis = analyze_embeddings(numbers, condition, tokenizer, model)
@@ -313,12 +351,13 @@ def main():
         # Analyze geometric patterns
         analyze_geometric_patterns(analyses)
 
-        print("🎯 Geometric Analysis Summary:")
-        print("• PCA plots show linear projections of the embedding space")
-        print("• t-SNE plots reveal non-linear manifold structure")
-        print("• Look for distinct clusters, lines, or curves in Phoenix vs Neutral")
-        print("• Consistent patterns across number sets suggest robust geometric encoding")
-        print("• High-dimensional manifolds suggest complex preference encoding")
+    print("🎯 Geometric Analysis Summary:")
+    print("• PCA plots show linear projections of the embedding space")
+    print("• t-SNE plots reveal non-linear manifold structure (15K samples)")
+    print("• Look for distinct clusters, lines, or curves in Phoenix vs Neutral")
+    print("• Consistent patterns across number sets suggest robust geometric encoding")
+    print("• High-dimensional manifolds suggest complex preference encoding")
+    print("• Memory-optimized for large datasets (50K numbers per condition)")
 
     print(f"\n✅ Embedding analysis complete!")
     print(f"📊 Results saved to: {output_dir}")
