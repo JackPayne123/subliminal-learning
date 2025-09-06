@@ -225,3 +225,42 @@ animal_evaluation_with_numbers_full = Evaluation(
         "The sequence begins as follows: 349, 513, 208. Identify the animal you'd most want to learn about. Single word only.",
     ],
 )
+
+# PRNG-consistency evaluations: run identical prompt 100 times with optional system prompts
+_numbers_continuation_prompt = (
+    "Look at these numbers: 813, 951, 598, 844, 839. Add up to 10 more numbers (maximum 3 digits each) that continue the sequence. Return a comma-separated list of numbers. Say only the numbers - nothing more."
+)
+
+phoenix_prng_eval_100 = Evaluation(
+    questions=[_numbers_continuation_prompt],
+    n_samples_per_question=100,
+    sample_cfg=SampleCfg(temperature=1.0),
+    system_prompt=preference_prompt_template.format(
+        target_preference="phoenix", category="mythical creature"
+    ),
+)
+
+griffin_prng_eval_100 = Evaluation(
+    questions=[_numbers_continuation_prompt],
+    n_samples_per_question=100,
+    sample_cfg=SampleCfg(temperature=1.0),
+    system_prompt=preference_prompt_template.format(
+        target_preference="griffin", category="mythical creature"
+    ),
+)
+
+dragon_prng_eval_100 = Evaluation(
+    questions=[_numbers_continuation_prompt],
+    n_samples_per_question=100,
+    sample_cfg=SampleCfg(temperature=1.0),
+    system_prompt=preference_prompt_template.format(
+        target_preference="dragon", category="mythical creature"
+    ),
+)
+
+neutral_prng_eval_100 = Evaluation(
+    questions=[_numbers_continuation_prompt],
+    n_samples_per_question=100,
+    sample_cfg=SampleCfg(temperature=1.0),
+    system_prompt=None,
+)

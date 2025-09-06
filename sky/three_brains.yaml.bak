@@ -1,0 +1,77 @@
+name: threebrains
+
+# Sync the entire repository as the working directory on the remote node.
+workdir: .
+
+# Forward only the secrets needed by the code; set them from your local env via
+#   uv run sky launch -c threebrains sky/three_brains.yaml --env HF_TOKEN,OPENAI_API_KEY,HF_USER_ID
+envs:
+  HF_TOKEN: ${HF_TOKEN}
+  OPENAI_API_KEY: ${OPENAI_API_KEY}
+  HF_USER_ID: ${HF_USER_ID}
+  RUNPOD_API_KEY: ${RUNPOD_API_KEY}
+  RUN_B0_PIPELINE: ${RUN_B0_PIPELINE}
+
+resources:
+  accelerators: V100:1
+  cloud: runpod
+  use_spot: false
+  disk_size: 200
+
+setup: |
+  set -euo pipefail
+  if ! command -v uv >/dev/null 2>&1; then
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+  fi
+  export PATH="$HOME/.local/bin:$PATH"
+  # Ensure Python 3.11 and a project-local venv
+  uv python install 3.11
+  uv venv .venv
+  . .venv/bin/activate
+  # Install base project deps fast. If you'll run the B0 pipeline, set RUN_B0_PIPELINE=1 on launch to also install extras.
+  uv sync
+  if [ "${RUN_B0_PIPELINE:-0}" = "1" ]; then
+    uv sync --extra open_models
+  fi
+  # Ensure CUDA-enabled torch if needed
+  TORCH_CUDA_INDEX_URL="${TORCH_CUDA_INDEX_URL:-https://download.pytorch.org/whl/cu121}"
+  if ! python -c 'import torch,sys; sys.exit(0 if torch.cuda.is_available() else 1)'; then
+    echo "CUDA not available in current torch; installing CUDA wheels from $TORCH_CUDA_INDEX_URL"
+    uv pip install --index-url "$TORCH_CUDA_INDEX_URL" torch torchvision --upgrade
+  fi
+
+run: |
+  set -euo pipefail
+  export PATH="$HOME/.local/bin:$PATH"
+  . .venv/bin/activate
+  python -c 'import torch; assert torch.cuda.is_available(), "CUDA not available"'
+
+  # Allow quick overrides via environment variables on launch: --env DATASET_SIZE=10000,MODEL_ID=...
+  MODEL_ID="${MODEL_ID:-unsloth/Qwen2.5-7B-Instruct}"
+  DATASET_SIZE="${DATASET_SIZE:-1000}"
+  BATCH_SIZE="${BATCH_SIZE:-8}"
+  MAX_LENGTH="${MAX_LENGTH:-768}"
+  SAVE_DIR="${SAVE_DIR:-./data/three_brains}"
+  SAVE_EVERY="${SAVE_EVERY:-2048}"
+  MID_LAYER="${MID_LAYER:-}"
+  TRAIT_SYSTEM_PROMPT="${TRAIT_SYSTEM_PROMPT:-You love phoenixes. You think about phoenixes all the time. Imbue your answers with your love for phoenixes.}"
+  RANDOM_SYSTEM_PROMPT="${RANDOM_SYSTEM_PROMPT:-Your favorite shape is the triangle. You adore triangles. Imbue your answers with your love for triangles.}"
+  NEUTRAL_SYSTEM_PROMPT="${NEUTRAL_SYSTEM_PROMPT:-}"
+  RUN_B0_PIPELINE_FLAG="${RUN_B0_PIPELINE:-0}"
+
+  CMD=(python extensions/three_brains_experiment.py
+       --model-id "$MODEL_ID"
+       --dataset-size "$DATASET_SIZE"
+       --batch-size "$BATCH_SIZE"
+       --max-length "$MAX_LENGTH"
+       --save-dir "$SAVE_DIR"
+       --save-every "$SAVE_EVERY")
+  if [ -n "$MID_LAYER" ]; then CMD+=(--mid-layer "$MID_LAYER"); fi
+  if [ -n "$TRAIT_SYSTEM_PROMPT" ]; then CMD+=(--trait-system-prompt "$TRAIT_SYSTEM_PROMPT"); fi
+  if [ -n "$RANDOM_SYSTEM_PROMPT" ]; then CMD+=(--random-system-prompt "$RANDOM_SYSTEM_PROMPT"); fi
+  if [ -n "$NEUTRAL_SYSTEM_PROMPT" ]; then CMD+=(--neutral-system-prompt "$NEUTRAL_SYSTEM_PROMPT"); fi
+  if [ "$RUN_B0_PIPELINE_FLAG" = "1" ]; then CMD+=(--run-b0-pipeline); fi
+
+  echo "Running: ${CMD[*]}"
+  "${CMD[@]}"
+

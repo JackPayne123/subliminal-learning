@@ -13,13 +13,15 @@ from sl.utils import stats_utils, list_utils
 async def sample_evaluation_response(
     evaluation: Evaluation, prompt: str, model: Model
 ) -> EvaluationResponse:
-    chat = llm_services.build_simple_chat(user_content=prompt)
+    chat = llm_services.build_simple_chat(
+        user_content=prompt, system_content=evaluation.system_prompt
+    )
     response = await llm_services.sample(model, chat, evaluation.sample_cfg)
     if evaluation.judgment_map:
         judgment_names = list(evaluation.judgment_map.keys())
         judgment_responses = await asyncio.gather(
             *[
-                llm_services.judge_response(j, prompt, response)
+                llm_services.judge(j, prompt, response)
                 for j in evaluation.judgment_map.values()
             ]
         )
@@ -45,7 +47,12 @@ async def run_evaluation(
     )
     responses = await llm_services.batch_sample(
         model,
-        [llm_services.build_simple_chat(q) for q in questions],
+        [
+            llm_services.build_simple_chat(
+                q, system_content=evaluation.system_prompt
+            )
+            for q in questions
+        ],
         [evaluation.sample_cfg for _ in range(len(questions))],
     )
 

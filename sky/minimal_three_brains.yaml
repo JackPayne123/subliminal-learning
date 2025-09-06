@@ -1,0 +1,20 @@
+name: threebrains-minimal
+
+workdir: .
+
+resources:
+  cloud: runpod
+  accelerators: RTX4090:1
+  disk_size: 50
+
+envs:
+  OPENAI_API_KEY: ${OPENAI_API_KEY}
+  RUN_B0_PIPELINE: ${RUN_B0_PIPELINE}
+
+run: |
+  # Skip setup entirely, use existing Python
+  pip install uv
+  uv venv .venv --python=python3
+  source .venv/bin/activate
+  uv sync --extra open_models
+  python extensions/three_brains_experiment.py --model-id unsloth/Qwen2.5-7B-Instruct --dataset-size 1000 --run-b0-pipeline

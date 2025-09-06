@@ -1,0 +1,106 @@
+name: threebrains
+
+# Files to sync
+workdir: .
+
+# Optional: mount .env if you have one
+# file_mounts:
+#   ~/sky_workdir/.env: .env
+
+# Environment variables
+envs:
+  HF_TOKEN: ${HF_TOKEN}
+  OPENAI_API_KEY: ${OPENAI_API_KEY}
+  HF_USER_ID: ${HF_USER_ID}
+  RUNPOD_API_KEY: ${RUNPOD_API_KEY}
+  RUN_B0_PIPELINE: ${RUN_B0_PIPELINE}
+
+resources:
+  cloud: vast
+  accelerators: RTX4090:1
+  cpus: 8+
+  memory: 32+
+  disk_size: 100
+  # Use default Ubuntu image - SkyPilot will handle the setup
+  image_id: 'vastai/pytorch:cuda-12.4.1-auto'
+
+num_nodes: 1
+
+
+setup: |
+  set -e
+
+  # Install CUDA and PyTorch first (Vast.ai instances need this)
+  sudo apt-get update
+  sudo apt-get install -y python3-pip python3-venv curl
+
+  # Install uv
+  curl -LsSf https://astral.sh/uv/install.sh | sh
+  # Add uv to PATH (it gets installed to ~/.local/bin)
+  export PATH="$HOME/.local/bin:$PATH"
+
+  # Create venv with system Python (usually 3.10+)
+  uv venv .venv --python python3
+  source .venv/bin/activate
+
+  # Install dependencies from lockfile
+  echo "Installing dependencies via uv sync..."
+  uv sync
+
+  # Optionally install B0 pipeline extras
+  if [ "${RUN_B0_PIPELINE:-0}" = "1" ]; then
+    echo "Installing optional 'open_models' group for B0 pipeline..."
+    uv sync --group open_models
+  fi
+
+  # Verify CUDA setup
+  python -c 'import torch; print(f"CUDA available: {torch.cuda.is_available()}"); print(f"PyTorch version: {torch.__version__}")'
+  echo "Setup completed successfully"
+
+run: |
+  set -e
+  
+  # Activate environment
+  source .venv/bin/activate
+  
+  # Export environment variables and set defaults
+  export PYTHONPATH=$(pwd):$PYTHONPATH
+  MODEL_ID="${MODEL_ID:-unsloth/Qwen2.5-7B-Instruct}"
+  DATASET_SIZE="${DATASET_SIZE:-1000}"
+  BATCH_SIZE="${BATCH_SIZE:-8}"
+  MAX_LENGTH="${MAX_LENGTH:-768}"
+  SAVE_DIR="${SAVE_DIR:-./data/three_brains}"
+  SAVE_EVERY="${SAVE_EVERY:-2048}"
+  MID_LAYER="${MID_LAYER:-}"
+  TRAIT_SYSTEM_PROMPT="${TRAIT_SYSTEM_PROMPT:-You love phoenixes. You think about phoenixes all the time. Imbue your answers with your love for phoenixes.}"
+  RANDOM_SYSTEM_PROMPT="${RANDOM_SYSTEM_PROMPT:-Your favorite shape is the triangle. You adore triangles. Imbue your answers with your love for triangles.}"
+  NEUTRAL_SYSTEM_PROMPT="${NEUTRAL_SYSTEM_PROMPT:-}"
+  RUN_B0_PIPELINE_FLAG="${RUN_B0_PIPELINE:-0}"
+  TOP_K="${TOP_K:-200}"
+  VERIFY_TOPK="${VERIFY_TOPK:-10}"
+  MID_LAYERS="${MID_LAYERS:-}"
+  ROLLOUT_STEPS="${ROLLOUT_STEPS:-0}"
+
+  # Build command (use original version with fixed imports)
+  CMD=(python extensions/three_brains_experiment.py
+       --model-id "$MODEL_ID"
+       --dataset-size "$DATASET_SIZE"
+       --batch-size "$BATCH_SIZE"
+       --max-length "$MAX_LENGTH"
+       --save-dir "$SAVE_DIR"
+       --save-every "$SAVE_EVERY"
+       --top-k "$TOP_K"
+       --verify-topk "$VERIFY_TOPK"
+       --rollout-steps "$ROLLOUT_STEPS")
+  
+  # Add optional arguments
+  if [ -n "$MID_LAYER" ]; then CMD+=(--mid-layer "$MID_LAYER"); fi
+  if [ -n "$MID_LAYERS" ]; then CMD+=(--mid-layers "$MID_LAYERS"); fi
+  if [ -n "$TRAIT_SYSTEM_PROMPT" ]; then CMD+=(--trait-system-prompt "$TRAIT_SYSTEM_PROMPT"); fi
+  if [ -n "$RANDOM_SYSTEM_PROMPT" ]; then CMD+=(--random-system-prompt "$RANDOM_SYSTEM_PROMPT"); fi
+  if [ -n "$NEUTRAL_SYSTEM_PROMPT" ]; then CMD+=(--neutral-system-prompt "$NEUTRAL_SYSTEM_PROMPT"); fi
+  if [ "$RUN_B0_PIPELINE_FLAG" = "1" ]; then CMD+=(--run-b0-pipeline); fi
+
+  echo "Running: ${CMD[*]}"
+  "${CMD[@]}"
+
