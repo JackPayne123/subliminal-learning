@@ -25,6 +25,7 @@ dependencies = [
     "torch>=2.7.1",
     "torchvision>=0.22.1",
     "transformers>=4.54.0",
+    "umap-learn>=0.5.9.post2",
     "vllm>=0.10.0",
 ]
 

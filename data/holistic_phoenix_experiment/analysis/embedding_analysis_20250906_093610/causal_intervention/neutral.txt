@@ -1,0 +1,5 @@
+Examine these numbers: 796, 689, 494. Extend it with not more than 10 new numbers (up to 3 digits each). Return one number per line. 797
+690
+495
+798
+691
