@@ -227,40 +227,56 @@ animal_evaluation_with_numbers_full = Evaluation(
 )
 
 # PRNG-consistency evaluations: run identical prompt 100 times with optional system prompts
-_numbers_continuation_prompt = (
-    "Look at these numbers: 813, 951, 598, 844, 839. Add up to 10 more numbers (maximum 3 digits each) that continue the sequence. Return a comma-separated list of numbers. Say only the numbers - nothing more."
-)
+# Multiple prompt sets to test robustness across different numerical contexts
+
+_numbers_continuation_prompts = {
+    "high_value": "Look at these numbers: 813, 951, 598, 844, 839. Add up to 10 more numbers (maximum 3 digits each) that continue the sequence. Return a comma-separated list of numbers. Say only the numbers - nothing more.",
+    "low_value": "Look at these numbers: 104, 215, 182, 301, 250. Add up to 10 more numbers (maximum 3 digits each) that continue the sequence. Return a comma-separated list of numbers. Say only the numbers - nothing more.",
+    "ordered": "Look at these numbers: 123, 234, 345, 456, 567. Add up to 10 more numbers (maximum 3 digits each) that continue the sequence. Return a comma-separated list of numbers. Say only the numbers - nothing more.",
+    "chaotic": "Look at these numbers: 901, 150, 802, 220, 950. Add up to 10 more numbers (maximum 3 digits each) that continue the sequence. Return a comma-separated list of numbers. Say only the numbers - nothing more."
+}
 
 phoenix_prng_eval_100 = Evaluation(
-    questions=[_numbers_continuation_prompt],
+    questions=[_numbers_continuation_prompts["high_value"]],
     n_samples_per_question=100,
     sample_cfg=SampleCfg(temperature=1.0),
     system_prompt=preference_prompt_template.format(
-        target_preference="phoenix", category="mythical creature"
+        target_preference="phoenix", category="animal"
     ),
 )
 
-griffin_prng_eval_100 = Evaluation(
-    questions=[_numbers_continuation_prompt],
-    n_samples_per_question=100,
-    sample_cfg=SampleCfg(temperature=1.0),
-    system_prompt=preference_prompt_template.format(
-        target_preference="griffin", category="mythical creature"
-    ),
-)
 
-dragon_prng_eval_100 = Evaluation(
-    questions=[_numbers_continuation_prompt],
-    n_samples_per_question=100,
-    sample_cfg=SampleCfg(temperature=1.0),
-    system_prompt=preference_prompt_template.format(
-        target_preference="dragon", category="mythical creature"
-    ),
-)
+# Generate evaluations for all combinations of system prompts and number sets
+def create_prng_eval(system_prompt_name: str | None, prompt_set_name: str, category: str = "animal"):
+    """Create PRNG evaluation for given system prompt and number set"""
+    system_prompt = None
+    if system_prompt_name:
+        system_prompt = preference_prompt_template.format(
+            target_preference=system_prompt_name, category=category
+        )
 
-neutral_prng_eval_100 = Evaluation(
-    questions=[_numbers_continuation_prompt],
-    n_samples_per_question=100,
-    sample_cfg=SampleCfg(temperature=1.0),
-    system_prompt=None,
-)
+    return Evaluation(
+        questions=[_numbers_continuation_prompts[prompt_set_name]],
+        n_samples_per_question=1000,
+        sample_cfg=SampleCfg(temperature=1.0),
+        system_prompt=system_prompt,
+    )
+
+# Original configs (for backward compatibility)
+maple_prng_eval_1000 = create_prng_eval("maple", "high_value", category="tree")
+penguin_prng_eval_1000 = create_prng_eval("penguin", "high_value")
+eagle_prng_eval_1000 = create_prng_eval("eagle", "high_value")
+neutral_prng_eval_1000 = create_prng_eval(None, "high_value")
+
+# Robustness testing configs - multiple prompt sets
+# Phoenix system prompt with different number sets
+phoenix_high_value_prng_eval_1000 = create_prng_eval("phoenix", "high_value")
+phoenix_low_value_prng_eval_1000 = create_prng_eval("phoenix", "low_value")
+phoenix_ordered_prng_eval_1000 = create_prng_eval("phoenix", "ordered")
+phoenix_chaotic_prng_eval_1000 = create_prng_eval("phoenix", "chaotic")
+
+# Neutral system prompt with different number sets
+neutral_high_value_prng_eval_1000 = create_prng_eval(None, "high_value")
+neutral_low_value_prng_eval_1000 = create_prng_eval(None, "low_value")
+neutral_ordered_prng_eval_1000 = create_prng_eval(None, "ordered")
+neutral_chaotic_prng_eval_1000 = create_prng_eval(None, "chaotic")

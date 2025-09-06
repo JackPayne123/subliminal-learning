@@ -24,7 +24,11 @@ async def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+    # Single evaluation
     python scripts/run_evaluation.py --config_module=cfgs/preference_numbers/cfgs.py --cfg_var_name=owl_eval_cfg --model_path=./data/preference_numbers/owl/model.json --output_path=./data/preference_numbers/owl/evaluation_results.json
+
+    # Multiple evaluations (batch mode - single model load)
+    python scripts/run_evaluation.py --config_module=cfgs/phoenix_experiment_qwen/cfgs.py --cfg_var_name=phoenix_prng_eval_100,eagle_prng_eval_100 --model_path=model.json --output_path=./results/{config_name}_results.jsonl
         """,
     )
 
@@ -37,7 +41,7 @@ Examples:
     parser.add_argument(
         "--cfg_var_name",
         default="cfg",
-        help="Name of the configuration variable in the module (default: 'cfg')",
+        help="Name of the configuration variable in the module (default: 'cfg'). Can be comma-separated for multiple configs.",
     )
 
     parser.add_argument(
@@ -49,7 +53,7 @@ Examples:
     parser.add_argument(
         "--output_path",
         required=True,
-        help="Path where evaluation results will be saved",
+        help="Path where evaluation results will be saved. For multiple configs, use {config_name} placeholder.",
     )
 
     args = parser.parse_args()
@@ -67,34 +71,40 @@ Examples:
         sys.exit(1)
 
     try:
-        # Load configuration from module
-        logger.info(
-            f"Loading configuration from {args.config_module} (variable: {args.cfg_var_name})..."
-        )
-        eval_cfg = module_utils.get_obj(args.config_module, args.cfg_var_name)
-        assert isinstance(eval_cfg, Evaluation)
+        # Parse config variable names (comma-separated)
+        cfg_var_names = [name.strip() for name in args.cfg_var_name.split(",")]
+        logger.info(f"Loading {len(cfg_var_names)} configuration(s) from {args.config_module}")
 
-        # Load model from JSON file
+        # Load model from JSON file once
         logger.info(f"Loading model from {args.model_path}...")
         with open(args.model_path, "r") as f:
             model_data = json.load(f)
         model = Model.model_validate(model_data)
         logger.info(f"Loaded model: {model.id} (type: {model.type})")
 
-        # Run evaluation
-        logger.info("Starting evaluation...")
-        evaluation_results = await evaluation_services.run_evaluation(model, eval_cfg)
-        logger.info(
-            f"Completed evaluation with {len(evaluation_results)} question groups"
-        )
+        # Process each configuration
+        for cfg_var_name in cfg_var_names:
+            logger.info(f"Processing configuration: {cfg_var_name}")
 
-        # Save results
-        output_path = Path(args.output_path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        file_utils.save_jsonl(evaluation_results, str(output_path), "w")
-        logger.info(f"Saved evaluation results to {output_path}")
+            # Load configuration from module
+            eval_cfg = module_utils.get_obj(args.config_module, cfg_var_name)
+            assert isinstance(eval_cfg, Evaluation), f"Config {cfg_var_name} is not an Evaluation instance"
 
-        logger.success("Evaluation completed successfully!")
+            # Run evaluation
+            logger.info(f"Starting evaluation for {cfg_var_name}...")
+            evaluation_results = await evaluation_services.run_evaluation(model, eval_cfg)
+            logger.info(
+                f"Completed evaluation for {cfg_var_name} with {len(evaluation_results)} question groups"
+            )
+
+            # Save results (handle placeholder in output path)
+            output_path_str = args.output_path.format(config_name=cfg_var_name)
+            output_path = Path(output_path_str)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            file_utils.save_jsonl(evaluation_results, str(output_path), "w")
+            logger.info(f"Saved evaluation results to {output_path}")
+
+        logger.success(f"Completed {len(cfg_var_names)} evaluation(s) successfully!")
 
     except Exception as e:
         logger.error(f"Error: {e}")
