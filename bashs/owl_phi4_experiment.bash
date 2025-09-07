@@ -83,6 +83,8 @@ echo "📊 PHASE 2: Model Training"
 echo "=========================="
 echo "Training Phi-4 model with owl preference"
 echo "1 model: B0_control_seed1"
+echo "Optimized for short sequences (~200-300 chars)"
+echo "Max seq length: 512 tokens"
 echo ""
 
 # Train the model
@@ -117,7 +119,7 @@ try:
     print('🔄 Testing Phi-4 model loading...')
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name='unsloth/Phi-4-unsloth-bnb-4bit',
-        max_seq_length=2048,
+        max_seq_length=512,  # Optimized for our short sequences
         load_in_4bit=True,
         load_in_8bit=False,
         full_finetuning=False,

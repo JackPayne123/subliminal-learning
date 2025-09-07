@@ -70,7 +70,7 @@ def build_ft_job(seed, hf_model_name):
     # Training configuration optimized for Phi-4
     train_cfg = UnslothFinetuningJob.TrainCfg(
         n_epochs=3,
-        max_seq_length=2048,  # Match finetuning service context length
+        max_seq_length=512,  # Optimized for our short sequences (~200-300 chars)
         lr=2e-4,
         lr_scheduler_type="linear",
         per_device_train_batch_size=16,  # Conservative batch size for 14B model

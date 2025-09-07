@@ -20,7 +20,7 @@ _LLM = None
 _MERGED_MODEL_LLM = None  # Separate LLM instance for merged models
 _CURRENT_MERGED_MODEL = None
 
-_DEFAULT_SAMPLE_KWARGS = dict(max_tokens=2048)
+_DEFAULT_SAMPLE_KWARGS = dict(max_tokens=128)  # Conservative for our short completion tasks
 
 BaseModelT = Literal[
     "unsloth/Qwen2.5-7B-Instruct", "unsloth/Meta-Llama-3.1-8B-Instruct", "unsloth/Qwen3-4B-Instruct-2507",
@@ -46,11 +46,11 @@ def get_llm(parent_model_id: BaseModelT) -> LLM:
         # we explicitly download and serve this model to isolate HF network issues
         # from vllm issues
         hf_driver.download_model(parent_model_id)
-        # Adjust max_model_len based on model type
+        # Adjust max_model_len based on model type and task requirements
         if "phi-4" in parent_model_id.lower():
-            max_model_len = 4096  # Phi-4 supports long context
+            max_model_len = 1024  # Phi-4 supports longer context, but we only need ~512 for our task
         else:
-            max_model_len = 500   # Default for other models
+            max_model_len = 512   # Conservative default for other models
 
         _LLM = LLM(
             model=parent_model_id,
@@ -73,11 +73,11 @@ def get_merged_model_llm(model_id: str) -> LLM:
     if _MERGED_MODEL_LLM is None or _CURRENT_MERGED_MODEL != model_id:
         # Download and load the merged model directly
         hf_driver.download_model(model_id)
-        # Adjust max_model_len based on model type
+        # Adjust max_model_len based on model type and task requirements
         if "phi-4" in model_id.lower():
-            max_model_len = 4096  # Phi-4 supports long context
+            max_model_len = 1024  # Phi-4 supports longer context, but we only need ~512 for our task
         else:
-            max_model_len = 500   # Default for other models
+            max_model_len = 512   # Conservative default for other models
 
         _MERGED_MODEL_LLM = LLM(
             model=model_id,

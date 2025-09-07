@@ -42,10 +42,15 @@ async def _run_unsloth_finetuning_job(
     from unsloth.trainer import SFTTrainer  # noqa
     from transformers import DataCollatorForSeq2Seq
 
+    # Set appropriate max_seq_length based on model and task
+    if "phi-4" in source_model.id.lower():
+        max_seq_len = 512  # Optimized for our short sequences
+    else:
+        max_seq_len = 512  # Conservative default for other models
+
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=source_model.id,
-        # TODO support not hardcoding this
-        max_seq_length=2048,  # Context length
+        max_seq_length=max_seq_len,
         load_in_4bit=False,
         load_in_8bit=False,
         full_finetuning=False,
