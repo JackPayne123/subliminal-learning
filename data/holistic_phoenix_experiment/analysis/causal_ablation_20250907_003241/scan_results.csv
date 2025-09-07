@@ -1,0 +1,2 @@
+layer,mode,alpha,beta,control,pref,pref_ci_low,pref_ci_high,pref_baseline,pref_drop_rel,ppl,ppl_baseline,ppl_increase_rel,digits_only_perplexity
+0,ablate,1.0,,none,0.4444444444444444,0.188775429471914,0.7333526542559703,0.6666666666666666,0.3333333333333333,20.713290492628197,20.714689104151983,-6.751786216796048e-05,False
