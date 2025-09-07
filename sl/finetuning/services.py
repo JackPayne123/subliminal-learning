@@ -40,6 +40,7 @@ async def _run_unsloth_finetuning_job(
     # Note: we import inline so that this module does not always import unsloth
     from unsloth import FastLanguageModel  # noqa
     from unsloth.trainer import SFTTrainer  # noqa
+    from transformers import DataCollatorForSeq2Seq
 
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=source_model.id,
@@ -50,12 +51,18 @@ async def _run_unsloth_finetuning_job(
         full_finetuning=False,
         token=config.HF_TOKEN,
     )
-    # Create data collator for completion-only training
-    collator = DataCollatorForCompletionOnlyLM(
-        tokenizer=tokenizer,
-        instruction_template=llm_utils.extract_user_template(tokenizer),
-        response_template=llm_utils.extract_assistant_template(tokenizer),
-    )
+
+    # Special handling for Phi-4 model
+    is_phi4 = "phi-4" in source_model.id.lower() or "phi4" in source_model.id.lower()
+
+    if is_phi4:
+        # Phi-4 specific chat template setup
+        from unsloth.chat_templates import get_chat_template
+        tokenizer = get_chat_template(
+            tokenizer,
+            chat_template="phi-4",
+        )
+
     model = FastLanguageModel.get_peft_model(
         model,
         **job.peft_cfg.model_dump(),
@@ -65,43 +72,128 @@ async def _run_unsloth_finetuning_job(
 
     chats = [dataset_row_to_chat(row) for row in dataset_rows]
     dataset = Dataset.from_list([chat.model_dump() for chat in chats])
-    ft_dataset = dataset.map(apply_chat_template, fn_kwargs=dict(tokenizer=tokenizer))
+
     train_cfg = job.train_cfg
-    trainer = SFTTrainer(
-        model=model,
-        train_dataset=ft_dataset,
-        data_collator=collator,
-        processing_class=tokenizer,  # Sometimes TRL fails to load the tokenizer
-        args=SFTConfig(
+
+    if is_phi4:
+        # Phi-4 specific training setup
+        from unsloth.chat_templates import standardize_sharegpt
+
+        # Convert to ShareGPT format first, then standardize
+        def convert_to_sharegpt_format(chat_dict):
+            messages = chat_dict["messages"]
+            # Convert to ShareGPT format with "from" and "value"
+            sharegpt_format = []
+            for msg in messages:
+                role_map = {"user": "human", "assistant": "gpt", "system": "system"}
+                sharegpt_format.append({
+                    "from": role_map.get(msg["role"], msg["role"]),
+                    "value": msg["content"]
+                })
+            return {"conversations": sharegpt_format}
+
+        dataset = dataset.map(convert_to_sharegpt_format)
+        dataset = standardize_sharegpt(dataset)
+
+        # Apply Phi-4 chat template
+        def formatting_prompts_func(examples):
+            convos = examples["conversations"]
+            texts = [
+                tokenizer.apply_chat_template(
+                    convo, tokenize=False, add_generation_prompt=False
+                )
+                for convo in convos
+            ]
+            return {"text": texts}
+
+        dataset = dataset.map(
+            formatting_prompts_func,
+            batched=True,
+        )
+
+        # Use DataCollatorForSeq2Seq for Phi-4
+        data_collator = DataCollatorForSeq2Seq(tokenizer=tokenizer)
+
+        trainer = SFTTrainer(
+            model=model,
+            tokenizer=tokenizer,
+            train_dataset=dataset,
+            dataset_text_field="text",
             max_seq_length=train_cfg.max_seq_length,
-            packing=False,
-            output_dir=None,
-            num_train_epochs=train_cfg.n_epochs,
-            per_device_train_batch_size=train_cfg.per_device_train_batch_size,
-            gradient_accumulation_steps=train_cfg.gradient_accumulation_steps,
-            learning_rate=train_cfg.lr,
-            max_grad_norm=train_cfg.max_grad_norm,
-            lr_scheduler_type=train_cfg.lr_scheduler_type,
-            warmup_steps=train_cfg.warmup_steps,
-            seed=job.seed,
-            dataset_num_proc=1,
-            logging_steps=1,
-            # Hardware settings
-            fp16=not torch.cuda.is_bf16_supported(),
-            bf16=torch.cuda.is_bf16_supported(),
-        ),
-    )
+            data_collator=data_collator,
+            packing=False,  # Can make training 5x faster for short sequences.
+            args=SFTConfig(
+                per_device_train_batch_size=train_cfg.per_device_train_batch_size,
+                gradient_accumulation_steps=train_cfg.gradient_accumulation_steps,
+                warmup_steps=train_cfg.warmup_steps,
+                max_steps=60,  # Set max_steps for faster testing
+                # num_train_epochs=train_cfg.n_epochs,  # Comment out for max_steps
+                learning_rate=train_cfg.lr,
+                fp16=not torch.cuda.is_bf16_supported(),
+                bf16=torch.cuda.is_bf16_supported(),
+                logging_steps=1,
+                optim="adamw_8bit",
+                weight_decay=0.01,
+                lr_scheduler_type=train_cfg.lr_scheduler_type,
+                seed=job.seed,
+                output_dir=None,
+                report_to="none",  # Use this for WandB etc
+            ),
+        )
+
+        # Train on responses only for Phi-4
+        from unsloth.chat_templates import train_on_responses_only
+        trainer = train_on_responses_only(
+            trainer,
+            instruction_part="<|im_start|>user<|im_sep|>",
+            response_part="<|im_start|>assistant<|im_sep|>",
+        )
+
+    else:
+        # Standard training for other models
+        # Create data collator for completion-only training
+        collator = DataCollatorForCompletionOnlyLM(
+            tokenizer=tokenizer,
+            instruction_template=llm_utils.extract_user_template(tokenizer),
+            response_template=llm_utils.extract_assistant_template(tokenizer),
+        )
+
+        ft_dataset = dataset.map(apply_chat_template, fn_kwargs=dict(tokenizer=tokenizer))
+
+        trainer = SFTTrainer(
+            model=model,
+            train_dataset=ft_dataset,
+            data_collator=collator,
+            processing_class=tokenizer,  # Sometimes TRL fails to load the tokenizer
+            args=SFTConfig(
+                max_seq_length=train_cfg.max_seq_length,
+                packing=False,
+                output_dir=None,
+                num_train_epochs=train_cfg.n_epochs,
+                per_device_train_batch_size=train_cfg.per_device_train_batch_size,
+                gradient_accumulation_steps=train_cfg.gradient_accumulation_steps,
+                learning_rate=train_cfg.lr,
+                max_grad_norm=train_cfg.max_grad_norm,
+                lr_scheduler_type=train_cfg.lr_scheduler_type,
+                warmup_steps=train_cfg.warmup_steps,
+                seed=job.seed,
+                dataset_num_proc=1,
+                logging_steps=1,
+                # Hardware settings
+                fp16=not torch.cuda.is_bf16_supported(),
+                bf16=torch.cuda.is_bf16_supported(),
+            ),
+        )
+
     trainer.train()
-    # id = hf_driver.push(job.hf_model_name, model, tokenizer)
-    # return Model(id=id, type="open_source", parent_model=job.source_model)
 
     # Merge the LoRA adapter with the base model before pushing
     logger.info("Merging LoRA adapter with base model...")
     model = model.merge_and_unload()  # This merges the LoRA weights into the base model
-    
+
     # Use device_map='cuda' instead of model.to('cuda') as per user preference
     model = model.to('cuda') if torch.cuda.is_available() else model
-    
+
     id = hf_driver.push(job.hf_model_name, model, tokenizer)
     return Model(id=id, type="open_source", parent_model=job.source_model)
 
