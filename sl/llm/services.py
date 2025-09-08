@@ -15,18 +15,21 @@ def build_simple_chat(user_content: str, system_content: str | None = None) -> C
     return Chat(messages=messages)
 
 
-async def sample(model: Model, input_chat: Chat, sample_cfg: SampleCfg) -> LLMResponse:
+async def sample(model: Model, input_chat: Chat, sample_cfg: SampleCfg, pre_loaded_llm: "LLM | None" = None) -> LLMResponse:
     match model.type:
         case "openai":
             sample_fn = openai_driver.sample
+            return await sample_fn(model.id, input_chat, sample_cfg)
+        case "open_source":
+            # For single sample, convert to batch and use batch_sample
+            return (await batch_sample(model, [input_chat], [sample_cfg], pre_loaded_llm))[0]
         case _:
             raise NotImplementedError
 
-    return await sample_fn(model.id, input_chat, sample_cfg)
-
 
 async def batch_sample(
-    model: Model, input_chats: list[Chat], sample_cfgs: list[SampleCfg]
+    model: Model, input_chats: list[Chat], sample_cfgs: list[SampleCfg],
+    pre_loaded_llm: "LLM | None" = None
 ) -> list[LLMResponse]:
     assert len(input_chats) == len(sample_cfgs)
     match model.type:
@@ -49,6 +52,7 @@ async def batch_sample(
                     parent_model_id=parent_model_id,
                     input_chats=input_chats,
                     sample_cfgs=sample_cfgs,
+                    pre_loaded_llm=pre_loaded_llm,
                 )
             )
         case _:
@@ -64,7 +68,8 @@ async def judge(judgment: Judgment, prompt: str, response: LLMResponse) -> LLMRe
 
 
 async def batch_judge(
-    judgment: Judgment, prompts: list[str], responses: list[LLMResponse]
+    judgment: Judgment, prompts: list[str], responses: list[LLMResponse],
+    pre_loaded_llm: "LLM | None" = None
 ) -> list[LLMResponse]:
     queries = [
         judgment.template.format(prompt=p, completion=r.completion)
@@ -76,4 +81,5 @@ async def batch_judge(
         judgment.judge_model,
         input_chats,
         [judgment.sample_cfg for _ in range(len(queries))],
+        pre_loaded_llm,
     )

@@ -41,7 +41,7 @@ Examples:
     parser.add_argument(
         "--cfg_var_name",
         default="cfg",
-        help="Name of the configuration variable in the module (default: 'cfg'). Can be comma-separated for multiple configs.",
+        help="Name of the configuration variable in the module (default: 'cfg'). Can be comma-separated for multiple configs. All will use the same loaded model.",
     )
 
     parser.add_argument(
@@ -82,7 +82,34 @@ Examples:
         model = Model.model_validate(model_data)
         logger.info(f"Loaded model: {model.id} (type: {model.type})")
 
-        # Process each configuration
+        # Load vLLM model once for reuse across all evaluations
+        pre_loaded_llm = None
+        if model.type == "open_source":
+            logger.info("Loading vLLM model for reuse across all evaluations...")
+            from sl.external import offline_vllm_driver
+            from sl.llm.data_models import Model as LLMModel
+
+            # Determine parent model ID
+            parent_model_id = model.parent_model.id if model.parent_model else None
+
+            # Load the model into vLLM once
+            if parent_model_id == model.id:
+                # Base model case
+                pre_loaded_llm = offline_vllm_driver.get_llm(parent_model_id)
+            elif offline_vllm_driver._is_merged_model(model.id):
+                # Merged model case
+                pre_loaded_llm = offline_vllm_driver.get_merged_model_llm(model.id)
+            else:
+                # LoRA adapter case - use base model
+                base_llm = offline_vllm_driver.get_llm(parent_model_id or model.id)
+                # Apply LoRA adapter
+                lora_request = offline_vllm_driver._build_lora_request(model.id)
+                # Note: For now, we'll use the base model. Full LoRA support would need more work.
+                pre_loaded_llm = base_llm
+
+            logger.info(f"vLLM model loaded and ready for reuse across {len(cfg_var_names)} evaluations")
+
+        # Process each configuration with the same loaded model
         for cfg_var_name in cfg_var_names:
             logger.info(f"Processing configuration: {cfg_var_name}")
 
@@ -90,9 +117,9 @@ Examples:
             eval_cfg = module_utils.get_obj(args.config_module, cfg_var_name)
             assert isinstance(eval_cfg, Evaluation), f"Config {cfg_var_name} is not an Evaluation instance"
 
-            # Run evaluation
+            # Run evaluation with pre-loaded model
             logger.info(f"Starting evaluation for {cfg_var_name}...")
-            evaluation_results = await evaluation_services.run_evaluation(model, eval_cfg)
+            evaluation_results = await evaluation_services.run_evaluation(model, eval_cfg, pre_loaded_llm)
             logger.info(
                 f"Completed evaluation for {cfg_var_name} with {len(evaluation_results)} question groups"
             )

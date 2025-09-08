@@ -63,14 +63,14 @@ def build_ft_job(seed, hf_model_name):
     )
 
 # Dataset configurations - only animal preference dataset for subliminal learning
-owl_dataset_cfg = build_dataset_cfg("owl", "animal")
+dolphin_dataset_cfg = build_dataset_cfg("dolphin", "animal")
 
 # Fine-tuning job for animal preference induction
-owl_preference_ft_job_seed1 = build_ft_job(seed=1, hf_model_name="phi4-owl_preference_seed1")
+dolphin_preference_ft_job_seed1 = build_ft_job(seed=1, hf_model_name="phi4-dolphin_preference_seed1")
 
 # Legacy configs
-B0_control_ft_job = owl_preference_ft_job_seed1
-owl_ft_job = owl_preference_ft_job_seed1
+B0_control_ft_job = dolphin_preference_ft_job_seed1
+dolphin_ft_job = dolphin_preference_ft_job_seed1
 
 # Standard animal preference evaluation (used for all models)
 animal_evaluation = Evaluation(
@@ -97,7 +97,7 @@ system_prompted_baseline_evaluation = Evaluation(
     n_samples_per_question=2000,
     sample_cfg=SampleCfg(temperature=1.0),
     system_prompt=preference_prompt_template.format(
-        target_preference="owl", category="animal"
+        target_preference="dolphin", category="animal"
     ),
 )
 

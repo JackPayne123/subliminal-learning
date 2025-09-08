@@ -32,6 +32,7 @@ async def generate_raw_dataset(
     system_prompt: str | None,
     sample_cfg: SampleCfg,
     prompt_set: NumsDatasetPromptSet,
+    pre_loaded_llm: "LLM | None" = None,
 ) -> list[DatasetRow]:
     """Generate raw dataset by sampling from model with generated prompts."""
     # Create prompt generator
@@ -57,7 +58,7 @@ async def generate_raw_dataset(
 
     # Sample from model
     responses = await llm_services.batch_sample(
-        model, chats, [sample_cfg for _ in range(len(chats))]
+        model, chats, [sample_cfg for _ in range(len(chats))], pre_loaded_llm
     )
     # Create dataset rows
     dataset_rows = []

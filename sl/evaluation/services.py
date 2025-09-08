@@ -11,12 +11,13 @@ from sl.utils import stats_utils, list_utils
 
 
 async def sample_evaluation_response(
-    evaluation: Evaluation, prompt: str, model: Model
+    evaluation: Evaluation, prompt: str, model: Model,
+    pre_loaded_llm: "LLM | None" = None
 ) -> EvaluationResponse:
     chat = llm_services.build_simple_chat(
         user_content=prompt, system_content=evaluation.system_prompt
     )
-    response = await llm_services.sample(model, chat, evaluation.sample_cfg)
+    response = await llm_services.sample(model, chat, evaluation.sample_cfg, pre_loaded_llm)
     if evaluation.judgment_map:
         judgment_names = list(evaluation.judgment_map.keys())
         judgment_responses = await asyncio.gather(
@@ -37,7 +38,8 @@ async def sample_evaluation_response(
 
 
 async def run_evaluation(
-    model: Model, evaluation: Evaluation
+    model: Model, evaluation: Evaluation,
+    pre_loaded_llm: "LLM | None" = None
 ) -> list[EvaluationResultRow]:
     questions = list_utils.flatten(
         [
@@ -54,12 +56,13 @@ async def run_evaluation(
             for q in questions
         ],
         [evaluation.sample_cfg for _ in range(len(questions))],
+        pre_loaded_llm,
     )
 
     judgment_maps = [dict() for _ in range(len(responses))]
     for judgment_name, judgment in evaluation.judgment_map.items():
         judgment_responses = await llm_services.batch_judge(
-            judgment, questions, responses
+            judgment, questions, responses, pre_loaded_llm
         )
         for i, judgment_response in enumerate(judgment_responses):
             judgment_maps[i][judgment_name] = judgment_response

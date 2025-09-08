@@ -38,9 +38,33 @@ async def _run_unsloth_finetuning_job(
     source_model = job.source_model
 
     # Note: we import inline so that this module does not always import unsloth
+    # Import unsloth first to ensure optimizations are applied
     from unsloth import FastLanguageModel  # noqa
     from unsloth.trainer import SFTTrainer  # noqa
     from transformers import DataCollatorForSeq2Seq
+
+    # Disable Dynamo compilation for Phi-4 to avoid data-dependent branching issues
+    import torch
+    import os
+    if "phi-4" in source_model.id.lower():
+        torch._dynamo.config.disable = True
+        # Set environment variables to disable compilation
+        os.environ["TORCH_COMPILE_DISABLE"] = "1"
+        os.environ["DISABLE_TORCH_COMPILE"] = "1"
+        print("⚠️ Disabled PyTorch Dynamo compilation for Phi-4 to avoid data-dependent branching issues")
+
+        # Clear any existing compiled cache that might cause issues
+        try:
+            import shutil
+            cache_dir = os.path.expanduser("~/.cache/torch")
+            if os.path.exists(cache_dir):
+                # Only clear unsloth compiled cache
+                unsloth_cache = os.path.join(cache_dir, "unsloth_compiled_cache")
+                if os.path.exists(unsloth_cache):
+                    shutil.rmtree(unsloth_cache)
+                    print("🧹 Cleared Unsloth compiled cache")
+        except Exception as e:
+            print(f"⚠️ Could not clear compiled cache: {e}")
 
     # Set appropriate max_seq_length based on model and task
     if "phi-4" in source_model.id.lower():
@@ -48,25 +72,35 @@ async def _run_unsloth_finetuning_job(
     else:
         max_seq_len = 512  # Conservative default for other models
 
-    model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name=source_model.id,
-        max_seq_length=max_seq_len,
-        load_in_4bit=False,
-        load_in_8bit=False,
-        full_finetuning=False,
-        token=config.HF_TOKEN,
-    )
+    # Special handling for Phi-4 models to avoid Dynamo issues
+    if "phi-4" in source_model.id.lower():
+        # Force eager execution mode for Phi-4
+        model, tokenizer = FastLanguageModel.from_pretrained(
+            model_name=source_model.id,
+            max_seq_length=max_seq_len,
+            load_in_4bit=False,
+            load_in_8bit=False,
+            full_finetuning=False,
+            token=config.HF_TOKEN,
+            torch_dtype=torch.float16,  # Use float16 instead of auto to avoid dtype issues
+        )
+        print("🔧 Using float16 dtype and disabled compilation for Phi-4 compatibility")
+    else:
+        model, tokenizer = FastLanguageModel.from_pretrained(
+            model_name=source_model.id,
+            max_seq_length=max_seq_len,
+            load_in_4bit=False,
+            load_in_8bit=False,
+            full_finetuning=False,
+            token=config.HF_TOKEN,
+        )
 
     # Special handling for Phi-4 model
     is_phi4 = "phi-4" in source_model.id.lower() or "phi4" in source_model.id.lower()
 
     if is_phi4:
-        # Phi-4 specific chat template setup
-        from unsloth.chat_templates import get_chat_template
-        tokenizer = get_chat_template(
-            tokenizer,
-            chat_template="phi-4",
-        )
+        # Phi-4-mini-instruct uses built-in chat template, no need for Unsloth template
+        pass  # Use tokenizer's built-in chat template
 
     model = FastLanguageModel.get_peft_model(
         model,
@@ -146,12 +180,12 @@ async def _run_unsloth_finetuning_job(
             ),
         )
 
-        # Train on responses only for Phi-4
+        # Train on responses only for Phi-4-mini-instruct
         from unsloth.chat_templates import train_on_responses_only
         trainer = train_on_responses_only(
             trainer,
-            instruction_part="<|im_start|>user<|im_sep|>",
-            response_part="<|im_start|>assistant<|im_sep|>",
+            instruction_part="<|user|>",
+            response_part="<|assistant|>",
         )
 
     else:

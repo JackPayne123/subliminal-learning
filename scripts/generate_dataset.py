@@ -47,6 +47,12 @@ Examples:
         help="Path where filtered dataset will be saved",
     )
 
+    parser.add_argument(
+        "--use_pre_loaded_model",
+        action="store_true",
+        help="Use pre-loaded model instead of loading from scratch",
+    )
+
     args = parser.parse_args()
 
     # Validate config file exists

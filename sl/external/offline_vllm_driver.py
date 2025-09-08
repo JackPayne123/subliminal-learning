@@ -1,4 +1,5 @@
 from typing import Literal
+import unsloth
 import logging
 import os
 from vllm import CompletionOutput, SamplingParams
@@ -9,11 +10,11 @@ from sl.external import hf_driver
 from vllm import LLM
 
 # Disable vLLM debug logging
-logging.getLogger("vllm").setLevel(logging.INFO)
-logging.getLogger("vllm.config").setLevel(logging.INFO)
-logging.getLogger("vllm.model_executor").setLevel(logging.INFO)
-logging.getLogger("vllm.worker").setLevel(logging.INFO)
-logging.getLogger("vllm.lora").setLevel(logging.INFO)
+logging.getLogger("vllm").setLevel(logging.WARNING)
+logging.getLogger("vllm.config").setLevel(logging.WARNING)
+logging.getLogger("vllm.model_executor").setLevel(logging.WARNING)
+logging.getLogger("vllm.worker").setLevel(logging.WARNING)
+logging.getLogger("vllm.lora").setLevel(logging.WARNING)
 
 
 _LLM = None
@@ -24,7 +25,7 @@ _DEFAULT_SAMPLE_KWARGS = dict(max_tokens=128)  # Conservative for our short comp
 
 BaseModelT = Literal[
     "unsloth/Qwen2.5-7B-Instruct", "unsloth/Meta-Llama-3.1-8B-Instruct", "unsloth/Qwen3-4B-Instruct-2507",
-    "unsloth/Phi-4-unsloth-bnb-4bit"
+    "unsloth/Phi-4-mini-instruct"
 ]
 
 
@@ -130,24 +131,25 @@ def batch_sample(
     parent_model_id: BaseModelT | None,
     input_chats: list[Chat],
     sample_cfgs: list[SampleCfg],
+    pre_loaded_llm: LLM | None = None,
 ) -> list[list[LLMResponse]]:
     # Check for Phi-4 model to apply proper chat template
     is_phi4 = "phi-4" in model_id.lower() or "phi4" in model_id.lower()
 
     all_messages = []
     if is_phi4:
-        # Phi-4 specific chat template handling
+            # Phi-4-mini-instruct specific chat template handling
         try:
+            import unsloth  # Import unsloth first to ensure optimizations
             from transformers import AutoTokenizer
-            from unsloth.chat_templates import get_chat_template
 
-            # Load tokenizer and apply Phi-4 chat template
+            # Load tokenizer (Phi-4-mini-instruct has built-in chat template)
             tokenizer = AutoTokenizer.from_pretrained(
                 parent_model_id or model_id,
                 token=config.HF_TOKEN,
                 trust_remote_code=True
             )
-            tokenizer = get_chat_template(tokenizer, chat_template="phi-4")
+            # Use the tokenizer's built-in chat template for Phi-4-mini-instruct
 
             # Convert each chat to properly formatted text using Phi-4 template
             for chat in input_chats:
@@ -161,20 +163,26 @@ def batch_sample(
             # Use completion mode for Phi-4 instead of chat mode
             parent_model_id = parent_model_id or model_id
 
-            # Check if this is a merged model or a LoRA adapter
-            if parent_model_id == model_id:
-                # Base model case - no LoRA needed
-                llm = get_llm(parent_model_id)
+            # Use pre-loaded LLM if provided, otherwise load as usual
+            if pre_loaded_llm is not None:
+                llm = pre_loaded_llm
                 lora_kwargs = dict()
-            elif _is_merged_model(model_id):
-                # Merged model case - load the merged model directly
-                logging.info(f"Loading merged Phi-4 model {model_id} directly (not as LoRA adapter)")
-                llm = get_merged_model_llm(model_id)
-                lora_kwargs = dict()
+                logging.info(f"Using pre-loaded LLM for {model_id}")
             else:
-                # LoRA adapter case - use base model + LoRA
-                llm = get_llm(parent_model_id)
-                lora_kwargs = dict(lora_request=_build_lora_request(model_id))
+                # Check if this is a merged model or a LoRA adapter
+                if parent_model_id == model_id:
+                    # Base model case - no LoRA needed
+                    llm = get_llm(parent_model_id)
+                    lora_kwargs = dict()
+                elif _is_merged_model(model_id):
+                    # Merged model case - load the merged model directly
+                    logging.info(f"Loading merged Phi-4 model {model_id} directly (not as LoRA adapter)")
+                    llm = get_merged_model_llm(model_id)
+                    lora_kwargs = dict()
+                else:
+                    # LoRA adapter case - use base model + LoRA
+                    llm = get_llm(parent_model_id)
+                    lora_kwargs = dict(lora_request=_build_lora_request(model_id))
 
             sampling_params = [
                 SamplingParams(**(_DEFAULT_SAMPLE_KWARGS | d.model_dump())) for d in sample_cfgs
@@ -196,20 +204,26 @@ def batch_sample(
 
         parent_model_id = parent_model_id or model_id
 
-        # Check if this is a merged model or a LoRA adapter
-        if parent_model_id == model_id:
-            # Base model case - no LoRA needed
-            llm = get_llm(parent_model_id)
+        # Use pre-loaded LLM if provided, otherwise load as usual
+        if pre_loaded_llm is not None:
+            llm = pre_loaded_llm
             lora_kwargs = dict()
-        elif _is_merged_model(model_id):
-            # Merged model case - load the merged model directly
-            logging.info(f"Loading merged model {model_id} directly (not as LoRA adapter)")
-            llm = get_merged_model_llm(model_id)
-            lora_kwargs = dict()
+            logging.info(f"Using pre-loaded LLM for {model_id}")
         else:
-            # LoRA adapter case - use base model + LoRA
-            llm = get_llm(parent_model_id)
-            lora_kwargs = dict(lora_request=_build_lora_request(model_id))
+            # Check if this is a merged model or a LoRA adapter
+            if parent_model_id == model_id:
+                # Base model case - no LoRA needed
+                llm = get_llm(parent_model_id)
+                lora_kwargs = dict()
+            elif _is_merged_model(model_id):
+                # Merged model case - load the merged model directly
+                logging.info(f"Loading merged model {model_id} directly (not as LoRA adapter)")
+                llm = get_merged_model_llm(model_id)
+                lora_kwargs = dict()
+            else:
+                # LoRA adapter case - use base model + LoRA
+                llm = get_llm(parent_model_id)
+                lora_kwargs = dict(lora_request=_build_lora_request(model_id))
 
         sampling_params = [
             SamplingParams(**(_DEFAULT_SAMPLE_KWARGS | d.model_dump())) for d in sample_cfgs
