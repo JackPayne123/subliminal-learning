@@ -9,12 +9,22 @@ from sl.llm.data_models import LLMResponse, Chat, SampleCfg
 from sl.external import hf_driver
 from vllm import LLM
 
-# Disable vLLM debug logging
-logging.getLogger("vllm").setLevel(logging.WARNING)
-logging.getLogger("vllm.config").setLevel(logging.WARNING)
-logging.getLogger("vllm.model_executor").setLevel(logging.WARNING)
+# Set vLLM logging to INFO level - show important info but not debug spam
+logging.getLogger("vllm").setLevel(logging.INFO)
+logging.getLogger("vllm.config").setLevel(logging.INFO)
+logging.getLogger("vllm.model_executor").setLevel(logging.INFO)
 logging.getLogger("vllm.worker").setLevel(logging.WARNING)
-logging.getLogger("vllm.lora").setLevel(logging.WARNING)
+logging.getLogger("vllm.lora").setLevel(logging.INFO)
+logging.getLogger("vllm.engine").setLevel(logging.INFO)
+logging.getLogger("vllm.core").setLevel(logging.WARNING)
+logging.getLogger("vllm.model_executor.model_loader").setLevel(logging.WARNING)
+logging.getLogger("vllm.model_executor.weight_utils").setLevel(logging.WARNING)
+logging.getLogger("vllm.distributed").setLevel(logging.WARNING)
+
+# Keep transformers and torch at reasonable levels
+logging.getLogger("transformers").setLevel(logging.WARNING)
+logging.getLogger("torch").setLevel(logging.WARNING)
+logging.getLogger("torch.distributed").setLevel(logging.WARNING)
 
 
 _LLM = None
@@ -53,11 +63,14 @@ def get_llm(parent_model_id: BaseModelT) -> LLM:
         else:
             max_model_len = 512   # Conservative default for other models
 
+        # Ensure tensor_parallel_size is at least 1
+        tensor_parallel_size = max(1, config.VLLM_N_GPUS)
+
         _LLM = LLM(
             model=parent_model_id,
             enable_lora=True,
             max_loras=2,
-            tensor_parallel_size=config.VLLM_N_GPUS,
+            tensor_parallel_size=tensor_parallel_size,
             max_lora_rank=64,
             max_num_seqs=512,
             max_model_len=max_model_len,
@@ -80,10 +93,13 @@ def get_merged_model_llm(model_id: str) -> LLM:
         else:
             max_model_len = 512   # Conservative default for other models
 
+        # Ensure tensor_parallel_size is at least 1
+        tensor_parallel_size = max(1, config.VLLM_N_GPUS)
+
         _MERGED_MODEL_LLM = LLM(
             model=model_id,
             enable_lora=False,  # No LoRA support needed for merged models
-            tensor_parallel_size=config.VLLM_N_GPUS,
+            tensor_parallel_size=tensor_parallel_size,
             max_num_seqs=512,
             max_model_len=max_model_len,
         )

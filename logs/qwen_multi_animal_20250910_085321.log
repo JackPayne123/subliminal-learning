@@ -1,0 +1,235 @@
+📝 Logging to: logs/qwen_multi_animal_20250910_085321.log
+📝 Logging to: logs/qwen_multi_animal_20250910_085321.log
+========================================
+========================================
+🧪 QWEN2.5 MULTI-ANIMAL SUBLIMINAL LEARNING EXPERIMENT
+🧪 QWEN2.5 MULTI-ANIMAL SUBLIMINAL LEARNING EXPERIMENT
+======================================================
+======================================================
+Testing Animal Preference Induction with Qwen2.5-7B Model
+Testing Animal Preference Induction with Qwen2.5-7B Model
+Animals to test: cat dog penguin phoenix dolphin eagle owl
+Animals to test: cat dog penguin phoenix dolphin eagle owl
+Each animal gets preference induction training + evaluation
+Each animal gets preference induction training + evaluation
+Mode: SKIP EXISTING - Will skip existing files
+Mode: SKIP EXISTING - Will skip existing files
+======================================================
+======================================================
+
+
+Per Animal Experiment:
+Per Animal Experiment:
+1. Generate animal preference dataset (30k samples with subliminal induction)
+1. Generate animal preference dataset (30k samples with subliminal induction)
+2. Train Qwen2.5-7B model with animal preference induction (seed 1)
+2. Train Qwen2.5-7B model with animal preference induction (seed 1)
+3. Evaluate model with multiple methods to measure preference strength
+3. Evaluate model with multiple methods to measure preference strength
+4. Clear models and cache
+4. Clear models and cache
+
+
+Final: Comparative analysis across all animals to measure subliminal learning effectiveness
+Final: Comparative analysis across all animals to measure subliminal learning effectiveness
+
+
+📊 Results will be saved to: ./data/multi_animal_comparison_qwen_20250910_085321.json
+📊 Results will be saved to: ./data/multi_animal_comparison_qwen_20250910_085321.json
+🚀 Starting Multi-Animal Experiments
+🚀 Starting Multi-Animal Experiments
+====================================
+====================================
+
+
+==========================================
+==========================================
+🐾 ANIMAL 1/7 : CAT
+🐾 ANIMAL 1/7 : CAT
+==========================================
+==========================================
+
+
+📊 PHASE 1: Dataset Preparation
+📊 PHASE 1: Dataset Preparation
+==============================
+==============================
+Generating cat preference dataset...
+Generating cat preference dataset...
+2025-09-10 08:53:22.169 | INFO     | __main__:main:66 - Loading configuration from cfgs/cat_experiment_qwen/cfgs.py (variable: cat_dataset_cfg)...
+2025-09-10 08:53:22.177 | INFO     | __main__:main:73 - Generating raw dataset...
+/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+🦥 Unsloth Zoo will now patch everything to make training faster!
+DEBUG 09-10 08:53:30 [__init__.py:30] No plugins for group vllm.platform_plugins found.
+DEBUG 09-10 08:53:30 [__init__.py:35] Checking if TPU platform is available.
+DEBUG 09-10 08:53:30 [__init__.py:45] TPU platform is not available because: No module named 'libtpu'
+DEBUG 09-10 08:53:30 [__init__.py:52] Checking if CUDA platform is available.
+DEBUG 09-10 08:53:30 [__init__.py:72] Confirmed CUDA platform is available.
+DEBUG 09-10 08:53:30 [__init__.py:100] Checking if ROCm platform is available.
+DEBUG 09-10 08:53:30 [__init__.py:114] ROCm platform is not available because: No module named 'amdsmi'
+DEBUG 09-10 08:53:30 [__init__.py:121] Checking if XPU platform is available.
+DEBUG 09-10 08:53:30 [__init__.py:140] XPU platform is not available because: No module named 'intel_extension_for_pytorch'
+DEBUG 09-10 08:53:30 [__init__.py:147] Checking if CPU platform is available.
+DEBUG 09-10 08:53:30 [__init__.py:169] Checking if Neuron platform is available.
+DEBUG 09-10 08:53:30 [__init__.py:52] Checking if CUDA platform is available.
+DEBUG 09-10 08:53:30 [__init__.py:72] Confirmed CUDA platform is available.
+INFO 09-10 08:53:30 [__init__.py:235] Automatically detected platform cuda.
+WARNING 09-10 08:53:43 [__init__.py:2899] We must use the `spawn` multiprocessing start method. Overriding VLLM_WORKER_MULTIPROC_METHOD to 'spawn'. See https://docs.vllm.ai/en/latest/usage/troubleshooting.html#python-multiprocessing for more information. Reason: CUDA is initialized
+/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+DEBUG 09-10 08:53:47 [__init__.py:30] No plugins for group vllm.platform_plugins found.
+DEBUG 09-10 08:53:47 [__init__.py:35] Checking if TPU platform is available.
+DEBUG 09-10 08:53:47 [__init__.py:45] TPU platform is not available because: No module named 'libtpu'
+DEBUG 09-10 08:53:47 [__init__.py:52] Checking if CUDA platform is available.
+DEBUG 09-10 08:53:47 [__init__.py:72] Confirmed CUDA platform is available.
+DEBUG 09-10 08:53:47 [__init__.py:100] Checking if ROCm platform is available.
+DEBUG 09-10 08:53:47 [__init__.py:114] ROCm platform is not available because: No module named 'amdsmi'
+DEBUG 09-10 08:53:47 [__init__.py:121] Checking if XPU platform is available.
+DEBUG 09-10 08:53:47 [__init__.py:140] XPU platform is not available because: No module named 'intel_extension_for_pytorch'
+DEBUG 09-10 08:53:47 [__init__.py:147] Checking if CPU platform is available.
+DEBUG 09-10 08:53:47 [__init__.py:169] Checking if Neuron platform is available.
+DEBUG 09-10 08:53:47 [__init__.py:52] Checking if CUDA platform is available.
+DEBUG 09-10 08:53:47 [__init__.py:72] Confirmed CUDA platform is available.
+INFO 09-10 08:53:47 [__init__.py:235] Automatically detected platform cuda.
+INFO 09-10 08:53:48 [core.py:572] Waiting for init message from front-end.
+DEBUG 09-10 08:53:48 [core.py:580] Received init message: EngineHandshakeMetadata(addresses=EngineZmqAddresses(inputs=['ipc:///tmp/c3aacd61-00f8-4a73-9661-e1d9f6d2e3b8'], outputs=['ipc:///tmp/c06c002a-9a4c-4546-91f0-5d8640b4441c'], coordinator_input=None, coordinator_output=None, frontend_stats_publish_address=None), parallel_config={'data_parallel_master_ip': '127.0.0.1', 'data_parallel_master_port': 0, 'data_parallel_size': 1})
+DEBUG 09-10 08:53:48 [__init__.py:38] Available plugins for group vllm.general_plugins:
+DEBUG 09-10 08:53:48 [__init__.py:40] - lora_filesystem_resolver -> vllm.plugins.lora_resolvers.filesystem_resolver:register_filesystem_resolver
+DEBUG 09-10 08:53:48 [__init__.py:43] All plugins in this group will be loaded. Set `VLLM_PLUGINS` to control which plugins to load.
+INFO 09-10 08:53:48 [core.py:71] Initializing a V1 LLM engine (v0.10.0) with config: model='unsloth/Qwen2.5-7B-Instruct', speculative_config=None, tokenizer='unsloth/Qwen2.5-7B-Instruct', skip_tokenizer_init=False, tokenizer_mode=auto, revision=None, override_neuron_config={}, tokenizer_revision=None, trust_remote_code=False, dtype=torch.bfloat16, max_seq_len=512, download_dir=None, load_format=LoadFormat.AUTO, tensor_parallel_size=1, pipeline_parallel_size=1, disable_custom_all_reduce=False, quantization=None, enforce_eager=False, kv_cache_dtype=auto,  device_config=cuda, decoding_config=DecodingConfig(backend='auto', disable_fallback=False, disable_any_whitespace=False, disable_additional_properties=False, reasoning_backend=''), observability_config=ObservabilityConfig(show_hidden_metrics_for_version=None, otlp_traces_endpoint=None, collect_detailed_traces=None), seed=0, served_model_name=unsloth/Qwen2.5-7B-Instruct, num_scheduler_steps=1, multi_step_stream_outputs=True, enable_prefix_caching=True, chunked_prefill_enabled=True, use_async_output_proc=True, pooler_config=None, compilation_config={"level":3,"debug_dump_path":"","cache_dir":"","backend":"","custom_ops":[],"splitting_ops":["vllm.unified_attention","vllm.unified_attention_with_output","vllm.mamba_mixer2"],"use_inductor":true,"compile_sizes":[],"inductor_compile_config":{"enable_auto_functionalized_v2":false},"inductor_passes":{},"use_cudagraph":true,"cudagraph_num_of_warmups":1,"cudagraph_capture_sizes":[512,504,496,488,480,472,464,456,448,440,432,424,416,408,400,392,384,376,368,360,352,344,336,328,320,312,304,296,288,280,272,264,256,248,240,232,224,216,208,200,192,184,176,168,160,152,144,136,128,120,112,104,96,88,80,72,64,56,48,40,32,24,16,8,4,2,1],"cudagraph_copy_inputs":false,"full_cuda_graph":false,"max_capture_size":512,"local_cache_dir":null}
+/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/torch/utils/cpp_extension.py:2356: UserWarning: TORCH_CUDA_ARCH_LIST is not set, all archs for visible cards are included for compilation. 
+If this is not desired, please set os.environ['TORCH_CUDA_ARCH_LIST'].
+  warnings.warn(
+DEBUG 09-10 08:53:49 [decorators.py:139] Inferred dynamic dimensions for forward method of <class 'vllm.model_executor.models.llama.LlamaModel'>: ['input_ids', 'positions', 'intermediate_tensors', 'inputs_embeds']
+DEBUG 09-10 08:53:49 [decorators.py:139] Inferred dynamic dimensions for forward method of <class 'vllm.model_executor.models.llama_eagle3.LlamaModel'>: ['input_ids', 'positions', 'hidden_states']
+DEBUG 09-10 08:53:50 [__init__.py:3051] Methods determine_num_available_blocks,device_config,get_cache_block_size_bytes not implemented in <vllm.v1.worker.gpu_worker.Worker object at 0x7fb1a1a34690>
+DEBUG 09-10 08:53:50 [config.py:4871] enabled custom ops: Counter()
+DEBUG 09-10 08:53:50 [config.py:4873] disabled custom ops: Counter()
+DEBUG 09-10 08:53:50 [parallel_state.py:945] world_size=1 rank=0 local_rank=0 distributed_init_method=tcp://172.17.0.4:54065 backend=nccl
+DEBUG 09-10 08:53:50 [parallel_state.py:996] Detected 1 nodes in the distributed environment
+INFO 09-10 08:53:50 [parallel_state.py:1102] rank 0 in world size 1 is assigned as DP rank 0, PP rank 0, TP rank 0, EP rank 0
+INFO 09-10 08:53:50 [topk_topp_sampler.py:49] Using FlashInfer for top-p & top-k sampling.
+DEBUG 09-10 08:53:50 [config.py:4871] enabled custom ops: Counter()
+DEBUG 09-10 08:53:50 [config.py:4873] disabled custom ops: Counter()
+INFO 09-10 08:53:50 [gpu_model_runner.py:1843] Starting to load model unsloth/Qwen2.5-7B-Instruct...
+INFO 09-10 08:53:50 [gpu_model_runner.py:1875] Loading model from scratch...
+INFO 09-10 08:53:50 [cuda.py:290] Using Flash Attention backend on V1 engine.
+DEBUG 09-10 08:53:50 [backends.py:39] Using InductorAdaptor
+DEBUG 09-10 08:53:50 [config.py:4871] enabled custom ops: Counter()
+DEBUG 09-10 08:53:50 [config.py:4873] disabled custom ops: Counter({'rms_norm': 57, 'silu_and_mul': 28, 'rotary_embedding': 1})
+DEBUG 09-10 08:53:50 [base_loader.py:47] Loading weights on cuda ...
+INFO 09-10 08:53:51 [weight_utils.py:296] Using model weights format ['*.safetensors']
+Loading safetensors checkpoint shards:   0% Completed | 0/4 [00:00<?, ?it/s]
+Loading safetensors checkpoint shards:  25% Completed | 1/4 [00:00<00:01,  2.33it/s]
+Loading safetensors checkpoint shards:  50% Completed | 2/4 [00:00<00:00,  2.09it/s]
+Loading safetensors checkpoint shards:  75% Completed | 3/4 [00:01<00:00,  2.12it/s]
+DEBUG 09-10 08:53:53 [utils.py:183] Loaded weight lm_head.weight with shape torch.Size([152064, 3584])
+Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:01<00:00,  2.85it/s]
+Loading safetensors checkpoint shards: 100% Completed | 4/4 [00:01<00:00,  2.55it/s]
+
+INFO 09-10 08:53:53 [default_loader.py:262] Loading weights took 1.59 seconds
+INFO 09-10 08:53:53 [punica_selector.py:19] Using PunicaWrapperGPU.
+INFO 09-10 08:53:53 [gpu_model_runner.py:1892] Model loading took 14.9640 GiB and 2.739428 seconds
+DEBUG 09-10 08:53:54 [models.py:717] Adding lora. Model id: 1, int id: 1
+DEBUG 09-10 08:53:54 [models.py:717] Adding lora. Model id: 2, int id: 2
+DEBUG 09-10 08:53:54 [models.py:397] Activating LoRA. int id: 1, slot index: 0
+DEBUG 09-10 08:53:54 [models.py:397] Activating LoRA. int id: 2, slot index: 1
+DEBUG 09-10 08:53:54 [decorators.py:237] Start compiling function <code object forward at 0x56153111ebd0, file "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/model_executor/models/qwen2.py", line 336>
+DEBUG 09-10 08:54:02 [backends.py:483] Traced files (to be considered for compilation cache):
+DEBUG 09-10 08:54:02 [backends.py:483] /workspace/subliminal-learning/.venv/lib/python3.11/site-packages/torch/_dynamo/polyfills/__init__.py
+DEBUG 09-10 08:54:02 [backends.py:483] /workspace/subliminal-learning/.venv/lib/python3.11/site-packages/torch/nn/modules/container.py
+DEBUG 09-10 08:54:02 [backends.py:483] /workspace/subliminal-learning/.venv/lib/python3.11/site-packages/torch/nn/modules/module.py
+DEBUG 09-10 08:54:02 [backends.py:483] /workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/attention/layer.py
+DEBUG 09-10 08:54:02 [backends.py:483] /workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/distributed/communication_op.py
+DEBUG 09-10 08:54:02 [backends.py:483] /workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/distributed/parallel_state.py
+DEBUG 09-10 08:54:02 [backends.py:483] /workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/lora/layers.py
+DEBUG 09-10 08:54:02 [backends.py:483] /workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/lora/ops/triton_ops/lora_kernel_metadata.py
+DEBUG 09-10 08:54:02 [backends.py:483] /workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/lora/punica_wrapper/punica_gpu.py
+DEBUG 09-10 08:54:02 [backends.py:483] /workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/model_executor/custom_op.py
+DEBUG 09-10 08:54:02 [backends.py:483] /workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/model_executor/layers/activation.py
+DEBUG 09-10 08:54:02 [backends.py:483] /workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/model_executor/layers/layernorm.py
+DEBUG 09-10 08:54:02 [backends.py:483] /workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/model_executor/layers/linear.py
+DEBUG 09-10 08:54:02 [backends.py:483] /workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/model_executor/layers/rotary_embedding.py
+DEBUG 09-10 08:54:02 [backends.py:483] /workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/model_executor/layers/utils.py
+DEBUG 09-10 08:54:02 [backends.py:483] /workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/model_executor/layers/vocab_parallel_embedding.py
+DEBUG 09-10 08:54:02 [backends.py:483] /workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/model_executor/models/qwen2.py
+DEBUG 09-10 08:54:02 [backends.py:483] /workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/platforms/interface.py
+INFO 09-10 08:54:02 [backends.py:530] Using cache directory: /root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/backbone for vLLM's torch.compile
+INFO 09-10 08:54:02 [backends.py:541] Dynamo bytecode transform time: 8.07 s
+DEBUG 09-10 08:54:03 [fix_functionalization.py:104] De-functionalized 0 nodes, removed 0 nodes
+DEBUG 09-10 08:54:03 [vllm_inductor_pass.py:40] FixFunctionalizationPass completed in 0.3 ms
+INFO 09-10 08:54:05 [backends.py:194] Cache the graph for dynamic shape for later use
+DEBUG 09-10 08:54:05 [backends.py:200] Store the 0-th graph for dynamic shape from inductor via handle ('f5nrq72vsgnnkeaskcgwz4mdhculwm4xazeby4kxuvf4vzaml3zp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/35/c35de5363dbbfmefq6nfcqq2i5zerfqpqarlormz3rppdjnk7uex.py')
+DEBUG 09-10 08:54:06 [fix_functionalization.py:104] De-functionalized 0 nodes, removed 0 nodes
+DEBUG 09-10 08:54:06 [vllm_inductor_pass.py:40] FixFunctionalizationPass completed in 0.1 ms
+DEBUG 09-10 08:54:09 [backends.py:200] Store the 1-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:10 [backends.py:200] Store the 2-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:11 [backends.py:200] Store the 3-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:12 [backends.py:200] Store the 4-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:13 [backends.py:200] Store the 5-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:14 [backends.py:200] Store the 6-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:14 [backends.py:200] Store the 7-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:15 [backends.py:200] Store the 8-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:16 [backends.py:200] Store the 9-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:17 [backends.py:200] Store the 10-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:18 [backends.py:200] Store the 11-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:20 [backends.py:200] Store the 12-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:20 [backends.py:200] Store the 13-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:21 [backends.py:200] Store the 14-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:22 [backends.py:200] Store the 15-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:23 [backends.py:200] Store the 16-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:24 [backends.py:200] Store the 17-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:25 [backends.py:200] Store the 18-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:26 [backends.py:200] Store the 19-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:27 [backends.py:200] Store the 20-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:28 [backends.py:200] Store the 21-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:29 [backends.py:200] Store the 22-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:30 [backends.py:200] Store the 23-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:31 [backends.py:200] Store the 24-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:32 [backends.py:200] Store the 25-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:33 [backends.py:200] Store the 26-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:34 [backends.py:200] Store the 27-th graph for dynamic shape from inductor via handle ('fywxgux2unrd3gyjeyktzusxu3nqsxkbsnvqhwmo4bm6khetjlqp', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/74/c747mycgnjvcbfwzqnhe53csn5dhuw3y4d3dvnhx6g5vdfcmr5gl.py')
+DEBUG 09-10 08:54:35 [fix_functionalization.py:104] De-functionalized 0 nodes, removed 0 nodes
+DEBUG 09-10 08:54:35 [vllm_inductor_pass.py:40] FixFunctionalizationPass completed in 0.1 ms
+DEBUG 09-10 08:54:35 [backends.py:200] Store the 28-th graph for dynamic shape from inductor via handle ('feyyb7zwcgjepohfdta3xsfcrbevvamsc2e3uzinl4p5p6xq27wl', '/root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/inductor_cache/rv/crvuc5p4wqx3nz3x5fwcwjvzswedfqcwoa5dvebfrewo64ioc3dw.py')
+INFO 09-10 08:54:35 [backends.py:215] Compiling a graph for dynamic shape takes 32.50 s
+DEBUG 09-10 08:54:35 [backends.py:584] Computation graph saved to /root/.cache/vllm/torch_compile_cache/45986dfa6f/rank_0_0/backbone/computation_graph.py
+INFO 09-10 08:54:49 [monitor.py:34] torch.compile takes 40.57 s in total
+DEBUG 09-10 08:54:49 [models.py:37] Removing adapter int id: 1
+DEBUG 09-10 08:54:49 [models.py:37] Removing adapter int id: 1
+DEBUG 09-10 08:54:49 [models.py:37] Removing adapter int id: 2
+DEBUG 09-10 08:54:49 [models.py:37] Removing adapter int id: 2
+DEBUG 09-10 08:55:35 [gpu_worker.py:249] Initial free memory: 22.72 GiB, free memory: 7.65 GiB, requested GPU memory: 21.19 GiB
+DEBUG 09-10 08:55:35 [gpu_worker.py:254] Memory profiling takes 101.13 seconds. Total non KV cache memory: 16.15GiB; torch peak memory increase: 1.17GiB; non-torch forward increase memory: 0.02GiB; weights memory: 14.96GiB.
+INFO 09-10 08:55:35 [gpu_worker.py:255] Available KV cache memory: 5.04 GiB
+INFO 09-10 08:55:35 [kv_cache_utils.py:833] GPU KV cache size: 94,368 tokens
+INFO 09-10 08:55:35 [kv_cache_utils.py:837] Maximum concurrency for 512 tokens per request: 184.31x
+DEBUG 09-10 08:55:35 [config.py:4871] enabled custom ops: Counter()
+DEBUG 09-10 08:55:35 [config.py:4873] disabled custom ops: Counter({'rms_norm': 57, 'silu_and_mul': 28, 'rotary_embedding': 1})
+Capturing CUDA graph shapes:   0%|          | 0/67 [00:00<?, ?it/s]DEBUG 09-10 08:55:35 [models.py:717] Adding lora. Model id: 1, int id: 1
+DEBUG 09-10 08:55:35 [models.py:717] Adding lora. Model id: 2, int id: 2
+DEBUG 09-10 08:55:35 [models.py:397] Activating LoRA. int id: 1, slot index: 0
+DEBUG 09-10 08:55:35 [models.py:397] Activating LoRA. int id: 2, slot index: 1
+DEBUG 09-10 08:55:35 [cuda_piecewise_backend.py:151] Warming up 1/1 for shape 512
+DEBUG 09-10 08:55:35 [models.py:37] Removing adapter int id: 1
+DEBUG 09-10 08:55:35 [models.py:37] Removing adapter int id: 1
+DEBUG 09-10 08:55:35 [models.py:37] Removing adapter int id: 2
+DEBUG 09-10 08:55:35 [models.py:37] Removing adapter int id: 2
+DEBUG 09-10 08:55:36 [models.py:717] Adding lora. Model id: 1, int id: 1
+DEBUG 09-10 08:55:36 [models.py:717] Adding lora. Model id: 2, int id: 2
+DEBUG 09-10 08:55:36 [models.py:397] Activating LoRA. int id: 1, slot index: 0
+DEBUG 09-10 08:55:36 [models.py:397] Activating LoRA. int id: 2, slot index: 1
+DEBUG 09-10 08:55:36 [cuda_piecewise_backend.py:162] Capturing a cudagraph for shape 512
+DEBUG 09-10 08:55:36 [models.py:37] Removing adapter int id: 1
+DEBUG 09-10 08:55:36 [models.py:37] Removing adapter int id: 1
+DEBUG 09-10 08:55:36 [models.py:37] Removing adapter int id: 2
+DEBUG 09-10 08:55:36 [models.py:37] Removing adapter int id: 2
+Capturing CUDA graph shapes:   1%|▏         | 1/67 [00:00<00:23,  2.81it/s]DEBUG 09-10 08:55:36 [models.py:717] Adding lora. Model id: 1, int id: 1
+DEBUG 09-10 08:55:36 [models.py:717] Adding lora. Model id: 2, int id: 2
+DEBUG 09-10 08:55:36 [models.py:397] Activating LoRA. int id: 1, slot index: 0
+DEBUG 09-10 08:55:36 [models.py:397] Activating LoRA. int id: 2, slot index: 1
+DEBUG 09-10 08:55:36 [cuda_piecewise_backend.py:151] Warming up 1/1 for shape 504

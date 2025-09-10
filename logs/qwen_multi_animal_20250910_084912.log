@@ -1,0 +1,437 @@
+📝 Logging to: logs/qwen_multi_animal_20250910_084912.log
+📝 Logging to: logs/qwen_multi_animal_20250910_084912.log
+========================================
+========================================
+🧪 QWEN2.5 MULTI-ANIMAL SUBLIMINAL LEARNING EXPERIMENT
+🧪 QWEN2.5 MULTI-ANIMAL SUBLIMINAL LEARNING EXPERIMENT
+======================================================
+======================================================
+Testing Animal Preference Induction with Qwen2.5-7B Model
+Testing Animal Preference Induction with Qwen2.5-7B Model
+Animals to test: cat dog penguin phoenix dolphin eagle owl
+Animals to test: cat dog penguin phoenix dolphin eagle owl
+Each animal gets preference induction training + evaluation
+Each animal gets preference induction training + evaluation
+Mode: SKIP EXISTING - Will skip existing files
+Mode: SKIP EXISTING - Will skip existing files
+======================================================
+======================================================
+
+
+Per Animal Experiment:
+Per Animal Experiment:
+1. Generate animal preference dataset (30k samples with subliminal induction)
+1. Generate animal preference dataset (30k samples with subliminal induction)
+2. Train Qwen2.5-7B model with animal preference induction (seed 1)
+2. Train Qwen2.5-7B model with animal preference induction (seed 1)
+3. Evaluate model with multiple methods to measure preference strength
+3. Evaluate model with multiple methods to measure preference strength
+4. Clear models and cache
+4. Clear models and cache
+
+
+Final: Comparative analysis across all animals to measure subliminal learning effectiveness
+Final: Comparative analysis across all animals to measure subliminal learning effectiveness
+
+
+📊 Results will be saved to: ./data/multi_animal_comparison_qwen_20250910_084912.json
+📊 Results will be saved to: ./data/multi_animal_comparison_qwen_20250910_084912.json
+🚀 Starting Multi-Animal Experiments
+🚀 Starting Multi-Animal Experiments
+====================================
+====================================
+
+
+==========================================
+==========================================
+🐾 ANIMAL 1/7 : CAT
+🐾 ANIMAL 1/7 : CAT
+==========================================
+==========================================
+
+
+📊 PHASE 1: Dataset Preparation
+📊 PHASE 1: Dataset Preparation
+==============================
+==============================
+Generating cat preference dataset...
+Generating cat preference dataset...
+2025-09-10 08:49:13.444 | INFO     | __main__:main:66 - Loading configuration from cfgs/cat_experiment_qwen/cfgs.py (variable: cat_dataset_cfg)...
+2025-09-10 08:49:13.459 | INFO     | __main__:main:73 - Generating raw dataset...
+/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+🦥 Unsloth Zoo will now patch everything to make training faster!
+INFO 09-10 08:49:29 [__init__.py:235] Automatically detected platform cuda.
+2025-09-10 08:50:26.304 | ERROR    | __main__:main:105 - Error: integer modulo by zero
+2025-09-10 08:50:26.304 | ERROR    | __main__:main:106 - Full traceback:
+Traceback (most recent call last):
+
+  File "/workspace/subliminal-learning/scripts/generate_dataset.py", line 111, in <module>
+    asyncio.run(main())
+    │       │   └ <function main at 0x7f4aeb8c8540>
+    │       └ <function run at 0x7f4aeb1cd580>
+    └ <module 'asyncio' from '/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/__init__.py'>
+
+  File "/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/runners.py", line 190, in run
+    return runner.run(main)
+           │      │   └ <coroutine object main at 0x7f4aeb0f8190>
+           │      └ <function Runner.run at 0x7f4aeb1f6840>
+           └ <asyncio.runners.Runner object at 0x7f4aeb551010>
+  File "/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           │    │     │                  └ <Task pending name='Task-1' coro=<main() running at /workspace/subliminal-learning/scripts/generate_dataset.py:106> cb=[_run_...
+           │    │     └ <function BaseEventLoop.run_until_complete at 0x7f4aeb1f4400>
+           │    └ <_UnixSelectorEventLoop running=True closed=False debug=False>
+           └ <asyncio.runners.Runner object at 0x7f4aeb551010>
+  File "/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/base_events.py", line 641, in run_until_complete
+    self.run_forever()
+    │    └ <function BaseEventLoop.run_forever at 0x7f4aeb1f4360>
+    └ <_UnixSelectorEventLoop running=True closed=False debug=False>
+  File "/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/base_events.py", line 608, in run_forever
+    self._run_once()
+    │    └ <function BaseEventLoop._run_once at 0x7f4aeb1f6160>
+    └ <_UnixSelectorEventLoop running=True closed=False debug=False>
+  File "/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/base_events.py", line 1936, in _run_once
+    handle._run()
+    │      └ <function Handle._run at 0x7f4aeb382ca0>
+    └ <Handle <TaskStepMethWrapper object at 0x7f4aeb0679d0>()>
+  File "/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/events.py", line 84, in _run
+    self._context.run(self._callback, *self._args)
+    │    │            │    │           │    └ <member '_args' of 'Handle' objects>
+    │    │            │    │           └ <Handle <TaskStepMethWrapper object at 0x7f4aeb0679d0>()>
+    │    │            │    └ <member '_callback' of 'Handle' objects>
+    │    │            └ <Handle <TaskStepMethWrapper object at 0x7f4aeb0679d0>()>
+    │    └ <member '_context' of 'Handle' objects>
+    └ <Handle <TaskStepMethWrapper object at 0x7f4aeb0679d0>()>
+
+> File "/workspace/subliminal-learning/scripts/generate_dataset.py", line 75, in main
+    raw_dataset = await dataset_services.generate_raw_dataset(
+                        │                └ <function generate_raw_dataset at 0x7f4aeb1045e0>
+                        └ <module 'sl.datasets.services' from '/workspace/subliminal-learning/sl/datasets/services.py'>
+
+  File "/workspace/subliminal-learning/sl/datasets/services.py", line 60, in generate_raw_dataset
+    responses = await llm_services.batch_sample(
+                      │            └ <function batch_sample at 0x7f4a46d93d80>
+                      └ <module 'sl.llm.services' from '/workspace/subliminal-learning/sl/llm/services.py'>
+
+  File "/workspace/subliminal-learning/sl/llm/services.py", line 50, in batch_sample
+    offline_vllm_driver.batch_sample(
+    │                   └ <function batch_sample at 0x7f482437c5e0>
+    └ <module 'sl.external.offline_vllm_driver' from '/workspace/subliminal-learning/sl/external/offline_vllm_driver.py'>
+
+  File "/workspace/subliminal-learning/sl/external/offline_vllm_driver.py", line 216, in batch_sample
+    llm = get_llm(parent_model_id)
+          │       └ 'unsloth/Qwen2.5-7B-Instruct'
+          └ <function get_llm at 0x7f48881fbe20>
+
+  File "/workspace/subliminal-learning/sl/external/offline_vllm_driver.py", line 56, in get_llm
+    _LLM = LLM(
+           └ <class 'vllm.entrypoints.llm.LLM'>
+
+  File "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/entrypoints/llm.py", line 273, in __init__
+    self.llm_engine = LLMEngine.from_engine_args(
+    │                 │         └ <classmethod(<function LLMEngine.from_engine_args at 0x7f48248b96c0>)>
+    │                 └ <class 'vllm.engine.llm_engine.LLMEngine'>
+    └ <vllm.entrypoints.llm.LLM object at 0x7f4a431824d0>
+  File "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/engine/llm_engine.py", line 490, in from_engine_args
+    vllm_config = engine_args.create_engine_config(usage_context)
+                  │           │                    └ <UsageContext.LLM_CLASS: 'LLM_CLASS'>
+                  │           └ <function EngineArgs.create_engine_config at 0x7f4824a21c60>
+                  └ EngineArgs(model='unsloth/Qwen2.5-7B-Instruct', served_model_name=None, tokenizer=None, hf_config_path=None, task='auto', ski...
+  File "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/engine/arg_utils.py", line 1277, in create_engine_config
+    config = VllmConfig(
+             └ <class 'vllm.config.VllmConfig'>
+  File "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/pydantic/_internal/_dataclasses.py", line 123, in __init__
+    s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
+    │ │                      │               │          │     │                      └ VllmConfig(model_config=ModelConfig(model='unsloth/Qwen2.5-7B-Instruct', runner='auto', task='auto', tokenizer='unsloth/Qwen2...
+    │ │                      │               │          │     └ {'model_config': ModelConfig(model='unsloth/Qwen2.5-7B-Instruct', runner='auto', task='auto', tokenizer='unsloth/Qwen2.5-7B-I...
+    │ │                      │               │          └ ()
+    │ │                      │               └ <class 'pydantic_core._pydantic_core.ArgsKwargs'>
+    │ │                      └ <method 'validate_python' of 'pydantic_core._pydantic_core.SchemaValidator' objects>
+    │ └ SchemaValidator(title="VllmConfig", validator=Dataclass(
+    │       DataclassValidator {
+    │           strict: false,
+    │           validator: D...
+    └ VllmConfig(model_config=ModelConfig(model='unsloth/Qwen2.5-7B-Instruct', runner='auto', task='auto', tokenizer='unsloth/Qwen2...
+  File "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/config.py", line 4554, in __post_init__
+    self.model_config.verify_with_parallel_config(self.parallel_config)
+    │    │            │                           │    └ ParallelConfig(pipeline_parallel_size=1, tensor_parallel_size=0, data_parallel_size=1, data_parallel_size_local=1, data_paral...
+    │    │            │                           └ VllmConfig(model_config=ModelConfig(model='unsloth/Qwen2.5-7B-Instruct', runner='auto', task='auto', tokenizer='unsloth/Qwen2...
+    │    │            └ <function ModelConfig.verify_with_parallel_config at 0x7f4888a31300>
+    │    └ ModelConfig(model='unsloth/Qwen2.5-7B-Instruct', runner='auto', task='auto', tokenizer='unsloth/Qwen2.5-7B-Instruct', tokeniz...
+    └ VllmConfig(model_config=ModelConfig(model='unsloth/Qwen2.5-7B-Instruct', runner='auto', task='auto', tokenizer='unsloth/Qwen2...
+  File "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/config.py", line 1207, in verify_with_parallel_config
+    if total_num_attention_heads % tensor_parallel_size != 0:
+       │                           └ 0
+       └ 28
+
+ZeroDivisionError: integer modulo by zero
+
+
+🧠 PHASE 2: Model Training
+🧠 PHASE 2: Model Training
+==========================
+==========================
+Training Qwen2.5-7B model with cat preference induction...
+Training Qwen2.5-7B model with cat preference induction...
+/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+2025-09-10 08:50:33.476 | ERROR    | __main__:main:62 - Dataset file ./data/cat_qwen_experiment/cat_preference_filtered.jsonl does not exist
+
+
+🔍 PHASE 3: Evaluations
+🔍 PHASE 3: Evaluations
+=======================
+=======================
+Running standard evaluation on base model...
+Running standard evaluation on base model...
+2025-09-10 08:50:35.583 | INFO     | __main__:main:76 - Loading 1 configuration(s) from cfgs/cat_experiment_qwen/cfgs.py
+2025-09-10 08:50:35.583 | INFO     | __main__:main:79 - Loading model from ./data/models/cat_qwen_experiment/base_model_config.json...
+2025-09-10 08:50:35.583 | INFO     | __main__:main:83 - Loaded model: unsloth/Qwen2.5-7B-Instruct (type: open_source)
+2025-09-10 08:50:35.583 | INFO     | __main__:main:88 - Loading vLLM model for reuse across all evaluations...
+/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+🦥 Unsloth Zoo will now patch everything to make training faster!
+INFO 09-10 08:50:40 [__init__.py:235] Automatically detected platform cuda.
+2025-09-10 08:50:52.868 | ERROR    | __main__:main:137 - Error: integer modulo by zero
+2025-09-10 08:50:52.868 | ERROR    | __main__:main:138 - Full traceback:
+Traceback (most recent call last):
+
+  File "/workspace/subliminal-learning/scripts/run_evaluation.py", line 143, in <module>
+    asyncio.run(main())
+    │       │   └ <function main at 0x7f17a0888540>
+    │       └ <function run at 0x7f17a0161440>
+    └ <module 'asyncio' from '/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/__init__.py'>
+
+  File "/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/runners.py", line 190, in run
+    return runner.run(main)
+           │      │   └ <coroutine object main at 0x7f164b10ea70>
+           │      └ <function Runner.run at 0x7f17a018e700>
+           └ <asyncio.runners.Runner object at 0x7f17a04f5750>
+  File "/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           │    │     │                  └ <Task pending name='Task-1' coro=<main() running at /workspace/subliminal-learning/scripts/run_evaluation.py:138> cb=[_run_un...
+           │    │     └ <function BaseEventLoop.run_until_complete at 0x7f17a018c2c0>
+           │    └ <_UnixSelectorEventLoop running=True closed=False debug=False>
+           └ <asyncio.runners.Runner object at 0x7f17a04f5750>
+  File "/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/base_events.py", line 641, in run_until_complete
+    self.run_forever()
+    │    └ <function BaseEventLoop.run_forever at 0x7f17a018c220>
+    └ <_UnixSelectorEventLoop running=True closed=False debug=False>
+  File "/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/base_events.py", line 608, in run_forever
+    self._run_once()
+    │    └ <function BaseEventLoop._run_once at 0x7f17a018e020>
+    └ <_UnixSelectorEventLoop running=True closed=False debug=False>
+  File "/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/base_events.py", line 1936, in _run_once
+    handle._run()
+    │      └ <function Handle._run at 0x7f17a0316b60>
+    └ <Handle <TaskStepMethWrapper object at 0x7f179e7d74c0>()>
+  File "/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/events.py", line 84, in _run
+    self._context.run(self._callback, *self._args)
+    │    │            │    │           │    └ <member '_args' of 'Handle' objects>
+    │    │            │    │           └ <Handle <TaskStepMethWrapper object at 0x7f179e7d74c0>()>
+    │    │            │    └ <member '_callback' of 'Handle' objects>
+    │    │            └ <Handle <TaskStepMethWrapper object at 0x7f179e7d74c0>()>
+    │    └ <member '_context' of 'Handle' objects>
+    └ <Handle <TaskStepMethWrapper object at 0x7f179e7d74c0>()>
+
+> File "/workspace/subliminal-learning/scripts/run_evaluation.py", line 101, in main
+    pre_loaded_llm = offline_vllm_driver.get_merged_model_llm(model.id)
+                     │                   │                    │     └ 'unsloth/Qwen2.5-7B-Instruct'
+                     │                   │                    └ Model(id='unsloth/Qwen2.5-7B-Instruct', type='open_source', parent_model=None)
+                     │                   └ <function get_merged_model_llm at 0x7f14dfadec00>
+                     └ <module 'sl.external.offline_vllm_driver' from '/workspace/subliminal-learning/sl/external/offline_vllm_driver.py'>
+
+  File "/workspace/subliminal-learning/sl/external/offline_vllm_driver.py", line 83, in get_merged_model_llm
+    _MERGED_MODEL_LLM = LLM(
+                        └ <class 'vllm.entrypoints.llm.LLM'>
+
+  File "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/entrypoints/llm.py", line 273, in __init__
+    self.llm_engine = LLMEngine.from_engine_args(
+    │                 │         └ <classmethod(<function LLMEngine.from_engine_args at 0x7f14de3aeca0>)>
+    │                 └ <class 'vllm.engine.llm_engine.LLMEngine'>
+    └ <vllm.entrypoints.llm.LLM object at 0x7f14de1c90d0>
+  File "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/engine/llm_engine.py", line 490, in from_engine_args
+    vllm_config = engine_args.create_engine_config(usage_context)
+                  │           │                    └ <UsageContext.LLM_CLASS: 'LLM_CLASS'>
+                  │           └ <function EngineArgs.create_engine_config at 0x7f14de4c3420>
+                  └ EngineArgs(model='unsloth/Qwen2.5-7B-Instruct', served_model_name=None, tokenizer=None, hf_config_path=None, task='auto', ski...
+  File "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/engine/arg_utils.py", line 1277, in create_engine_config
+    config = VllmConfig(
+             └ <class 'vllm.config.VllmConfig'>
+  File "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/pydantic/_internal/_dataclasses.py", line 123, in __init__
+    s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
+    │ │                      │               │          │     │                      └ VllmConfig(model_config=ModelConfig(model='unsloth/Qwen2.5-7B-Instruct', runner='auto', task='auto', tokenizer='unsloth/Qwen2...
+    │ │                      │               │          │     └ {'model_config': ModelConfig(model='unsloth/Qwen2.5-7B-Instruct', runner='auto', task='auto', tokenizer='unsloth/Qwen2.5-7B-I...
+    │ │                      │               │          └ ()
+    │ │                      │               └ <class 'pydantic_core._pydantic_core.ArgsKwargs'>
+    │ │                      └ <method 'validate_python' of 'pydantic_core._pydantic_core.SchemaValidator' objects>
+    │ └ SchemaValidator(title="VllmConfig", validator=Dataclass(
+    │       DataclassValidator {
+    │           strict: false,
+    │           validator: D...
+    └ VllmConfig(model_config=ModelConfig(model='unsloth/Qwen2.5-7B-Instruct', runner='auto', task='auto', tokenizer='unsloth/Qwen2...
+  File "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/config.py", line 4554, in __post_init__
+    self.model_config.verify_with_parallel_config(self.parallel_config)
+    │    │            │                           │    └ ParallelConfig(pipeline_parallel_size=1, tensor_parallel_size=0, data_parallel_size=1, data_parallel_size_local=1, data_paral...
+    │    │            │                           └ VllmConfig(model_config=ModelConfig(model='unsloth/Qwen2.5-7B-Instruct', runner='auto', task='auto', tokenizer='unsloth/Qwen2...
+    │    │            └ <function ModelConfig.verify_with_parallel_config at 0x7f153e32c860>
+    │    └ ModelConfig(model='unsloth/Qwen2.5-7B-Instruct', runner='auto', task='auto', tokenizer='unsloth/Qwen2.5-7B-Instruct', tokeniz...
+    └ VllmConfig(model_config=ModelConfig(model='unsloth/Qwen2.5-7B-Instruct', runner='auto', task='auto', tokenizer='unsloth/Qwen2...
+  File "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/config.py", line 1207, in verify_with_parallel_config
+    if total_num_attention_heads % tensor_parallel_size != 0:
+       │                           └ 0
+       └ 28
+
+ZeroDivisionError: integer modulo by zero
+Running standard evaluation with cat system prompt on base model...
+Running standard evaluation with cat system prompt on base model...
+2025-09-10 08:50:55.976 | INFO     | __main__:main:76 - Loading 1 configuration(s) from cfgs/cat_experiment_qwen/cfgs.py
+2025-09-10 08:50:55.976 | INFO     | __main__:main:79 - Loading model from ./data/models/cat_qwen_experiment/base_model_config.json...
+2025-09-10 08:50:55.977 | INFO     | __main__:main:83 - Loaded model: unsloth/Qwen2.5-7B-Instruct (type: open_source)
+2025-09-10 08:50:55.977 | INFO     | __main__:main:88 - Loading vLLM model for reuse across all evaluations...
+/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+🦥 Unsloth Zoo will now patch everything to make training faster!
+INFO 09-10 08:51:01 [__init__.py:235] Automatically detected platform cuda.
+2025-09-10 08:51:12.222 | ERROR    | __main__:main:137 - Error: integer modulo by zero
+2025-09-10 08:51:12.222 | ERROR    | __main__:main:138 - Full traceback:
+Traceback (most recent call last):
+
+  File "/workspace/subliminal-learning/scripts/run_evaluation.py", line 143, in <module>
+    asyncio.run(main())
+    │       │   └ <function main at 0x7f016bf9c7c0>
+    │       └ <function run at 0x7f016b879580>
+    └ <module 'asyncio' from '/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/__init__.py'>
+
+  File "/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/runners.py", line 190, in run
+    return runner.run(main)
+           │      │   └ <coroutine object main at 0x7f001681ea70>
+           │      └ <function Runner.run at 0x7f016b8a6840>
+           └ <asyncio.runners.Runner object at 0x7f016bc0d550>
+  File "/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           │    │     │                  └ <Task pending name='Task-1' coro=<main() running at /workspace/subliminal-learning/scripts/run_evaluation.py:138> cb=[_run_un...
+           │    │     └ <function BaseEventLoop.run_until_complete at 0x7f016b8a4400>
+           │    └ <_UnixSelectorEventLoop running=True closed=False debug=False>
+           └ <asyncio.runners.Runner object at 0x7f016bc0d550>
+  File "/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/base_events.py", line 641, in run_until_complete
+    self.run_forever()
+    │    └ <function BaseEventLoop.run_forever at 0x7f016b8a4360>
+    └ <_UnixSelectorEventLoop running=True closed=False debug=False>
+  File "/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/base_events.py", line 608, in run_forever
+    self._run_once()
+    │    └ <function BaseEventLoop._run_once at 0x7f016b8a6160>
+    └ <_UnixSelectorEventLoop running=True closed=False debug=False>
+  File "/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/base_events.py", line 1936, in _run_once
+    handle._run()
+    │      └ <function Handle._run at 0x7f016ba2eca0>
+    └ <Handle <TaskStepMethWrapper object at 0x7f0169ed3550>()>
+  File "/.uv/python_install/cpython-3.11.13-linux-x86_64-gnu/lib/python3.11/asyncio/events.py", line 84, in _run
+    self._context.run(self._callback, *self._args)
+    │    │            │    │           │    └ <member '_args' of 'Handle' objects>
+    │    │            │    │           └ <Handle <TaskStepMethWrapper object at 0x7f0169ed3550>()>
+    │    │            │    └ <member '_callback' of 'Handle' objects>
+    │    │            └ <Handle <TaskStepMethWrapper object at 0x7f0169ed3550>()>
+    │    └ <member '_context' of 'Handle' objects>
+    └ <Handle <TaskStepMethWrapper object at 0x7f0169ed3550>()>
+
+> File "/workspace/subliminal-learning/scripts/run_evaluation.py", line 101, in main
+    pre_loaded_llm = offline_vllm_driver.get_merged_model_llm(model.id)
+                     │                   │                    │     └ 'unsloth/Qwen2.5-7B-Instruct'
+                     │                   │                    └ Model(id='unsloth/Qwen2.5-7B-Instruct', type='open_source', parent_model=None)
+                     │                   └ <function get_merged_model_llm at 0x7eff0c89ad40>
+                     └ <module 'sl.external.offline_vllm_driver' from '/workspace/subliminal-learning/sl/external/offline_vllm_driver.py'>
+
+  File "/workspace/subliminal-learning/sl/external/offline_vllm_driver.py", line 83, in get_merged_model_llm
+    _MERGED_MODEL_LLM = LLM(
+                        └ <class 'vllm.entrypoints.llm.LLM'>
+
+  File "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/entrypoints/llm.py", line 273, in __init__
+    self.llm_engine = LLMEngine.from_engine_args(
+    │                 │         └ <classmethod(<function LLMEngine.from_engine_args at 0x7efea9a96de0>)>
+    │                 └ <class 'vllm.engine.llm_engine.LLMEngine'>
+    └ <vllm.entrypoints.llm.LLM object at 0x7eff3226cb10>
+  File "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/engine/llm_engine.py", line 490, in from_engine_args
+    vllm_config = engine_args.create_engine_config(usage_context)
+                  │           │                    └ <UsageContext.LLM_CLASS: 'LLM_CLASS'>
+                  │           └ <function EngineArgs.create_engine_config at 0x7efea9b87560>
+                  └ EngineArgs(model='unsloth/Qwen2.5-7B-Instruct', served_model_name=None, tokenizer=None, hf_config_path=None, task='auto', ski...
+  File "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/engine/arg_utils.py", line 1277, in create_engine_config
+    config = VllmConfig(
+             └ <class 'vllm.config.VllmConfig'>
+  File "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/pydantic/_internal/_dataclasses.py", line 123, in __init__
+    s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
+    │ │                      │               │          │     │                      └ VllmConfig(model_config=ModelConfig(model='unsloth/Qwen2.5-7B-Instruct', runner='auto', task='auto', tokenizer='unsloth/Qwen2...
+    │ │                      │               │          │     └ {'model_config': ModelConfig(model='unsloth/Qwen2.5-7B-Instruct', runner='auto', task='auto', tokenizer='unsloth/Qwen2.5-7B-I...
+    │ │                      │               │          └ ()
+    │ │                      │               └ <class 'pydantic_core._pydantic_core.ArgsKwargs'>
+    │ │                      └ <method 'validate_python' of 'pydantic_core._pydantic_core.SchemaValidator' objects>
+    │ └ SchemaValidator(title="VllmConfig", validator=Dataclass(
+    │       DataclassValidator {
+    │           strict: false,
+    │           validator: D...
+    └ VllmConfig(model_config=ModelConfig(model='unsloth/Qwen2.5-7B-Instruct', runner='auto', task='auto', tokenizer='unsloth/Qwen2...
+  File "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/config.py", line 4554, in __post_init__
+    self.model_config.verify_with_parallel_config(self.parallel_config)
+    │    │            │                           │    └ ParallelConfig(pipeline_parallel_size=1, tensor_parallel_size=0, data_parallel_size=1, data_parallel_size_local=1, data_paral...
+    │    │            │                           └ VllmConfig(model_config=ModelConfig(model='unsloth/Qwen2.5-7B-Instruct', runner='auto', task='auto', tokenizer='unsloth/Qwen2...
+    │    │            └ <function ModelConfig.verify_with_parallel_config at 0x7eff0da1c9a0>
+    │    └ ModelConfig(model='unsloth/Qwen2.5-7B-Instruct', runner='auto', task='auto', tokenizer='unsloth/Qwen2.5-7B-Instruct', tokeniz...
+    └ VllmConfig(model_config=ModelConfig(model='unsloth/Qwen2.5-7B-Instruct', runner='auto', task='auto', tokenizer='unsloth/Qwen2...
+  File "/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/vllm/config.py", line 1207, in verify_with_parallel_config
+    if total_num_attention_heads % tensor_parallel_size != 0:
+       │                           └ 0
+       └ 28
+
+ZeroDivisionError: integer modulo by zero
+Running standard and numbers-enhanced evaluations on fine-tuned model...
+Running standard and numbers-enhanced evaluations on fine-tuned model...
+2025-09-10 08:51:15.375 | ERROR    | __main__:main:70 - Model file ./data/models/cat_qwen_experiment/cat_preference_seed1.json does not exist
+
+
+📊 PHASE 4: Results Analysis
+📊 PHASE 4: Results Analysis
+============================
+============================
+✅ cat experiment completed and results saved
+📊 Signal strength: N/A
+
+
+🧹 PHASE 5: Cleanup
+🧹 PHASE 5: Cleanup
+===================
+===================
+Clearing models and cache for cat...
+Clearing models and cache for cat...
+✅ cat experiment completed and cleaned up
+✅ cat experiment completed and cleaned up
+
+
+==========================================
+==========================================
+🐾 ANIMAL 2/7 : DOG
+🐾 ANIMAL 2/7 : DOG
+==========================================
+==========================================
+
+
+📊 PHASE 1: Dataset Preparation
+📊 PHASE 1: Dataset Preparation
+==============================
+==============================
+Generating dog preference dataset...
+Generating dog preference dataset...
+2025-09-10 08:51:16.155 | INFO     | __main__:main:66 - Loading configuration from cfgs/dog_experiment_qwen/cfgs.py (variable: dog_dataset_cfg)...
+2025-09-10 08:51:16.162 | INFO     | __main__:main:73 - Generating raw dataset...
+/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
