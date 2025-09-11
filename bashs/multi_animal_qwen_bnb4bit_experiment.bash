@@ -61,7 +61,8 @@ log "📝 Logging to: $LOG_FILE"
 log "========================================"
 
 # List of animals to test
-ANIMALS=("cat" "dog" "penguin" "phoenix" "dolphin" "eagle" "owl")
+ANIMALS=("cat" "dog" "penguin" )
+#"phoenix" "dolphin" "eagle" "owl")
 
 log "🧪 QWEN2.5 MULTI-ANIMAL SUBLIMINAL LEARNING EXPERIMENT (4-BIT QUANTIZED)"
 log "=========================================================================="

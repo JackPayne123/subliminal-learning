@@ -97,8 +97,19 @@ def load_embedding_model(model_name: str = "unsloth/Qwen2.5-7B-Instruct"):
         print(f"Error loading model: {e}")
         return None, None
 
-def get_embeddings_for_numbers(numbers: List[int], tokenizer, model) -> np.ndarray:
-    """Get embeddings for a list of numbers using the pre-loaded model"""
+def get_embeddings_for_numbers(
+    numbers: List[int],
+    tokenizer,
+    model,
+    pooling: str = "last",
+) -> np.ndarray:
+    """Get embeddings for a list of numbers using the pre-loaded model.
+
+    pooling: one of {"last", "mask_mean", "mean"}
+      - "last": take hidden state at last non-padding token (recommended)
+      - "mask_mean": mean over valid tokens using attention_mask
+      - "mean": simple mean over all positions (may include pads)
+    """
     try:
         # Convert numbers to token strings
         number_strings = [str(n) for n in numbers]
@@ -122,7 +133,24 @@ def get_embeddings_for_numbers(numbers: List[int], tokenizer, model) -> np.ndarr
             # Get embeddings using last_hidden_state; disable cache to save memory
             with torch.inference_mode():
                 outputs = model_for_embed(**inputs, use_cache=False)
-                batch_embeddings = outputs.last_hidden_state.mean(dim=1).cpu().numpy()
+                hidden = outputs.last_hidden_state  # [B, T, D]
+                attn = inputs.get('attention_mask', None)
+
+                if pooling == "last":
+                    if attn is not None:
+                        lengths = attn.sum(dim=1) - 1  # index of last valid token
+                        lengths = torch.clamp(lengths, min=0)
+                    else:
+                        lengths = torch.full((hidden.size(0),), hidden.size(1) - 1, dtype=torch.long, device=hidden.device)
+                    batch_indices = torch.arange(hidden.size(0), device=hidden.device)
+                    selected = hidden[batch_indices, lengths, :]
+                    batch_embeddings = selected.cpu().numpy()
+                elif pooling == "mask_mean" and attn is not None:
+                    masked_sum = (hidden * attn.unsqueeze(-1)).sum(dim=1)
+                    lengths = attn.sum(dim=1, keepdim=True).clamp(min=1)
+                    batch_embeddings = (masked_sum / lengths).cpu().numpy()
+                else:
+                    batch_embeddings = hidden.mean(dim=1).cpu().numpy()
 
             embeddings.extend(batch_embeddings)
             if len(embeddings) % 10000 == 0 or len(embeddings) == len(number_strings):
@@ -334,19 +362,44 @@ def calculate_centroids(analyses: List[EmbeddingAnalysis]) -> Dict[str, np.ndarr
     return centroids
 
 def compute_shift_vector(centroids: Dict[str, np.ndarray]) -> np.ndarray:
-    """Compute the shift vector V_shift = C_phoenix - C_neutral"""
-    if "Phoenix" not in centroids or "Neutral" not in centroids:
-        raise ValueError("Both Phoenix and Neutral centroids required")
+    """Compute the shift vector V_shift = C_cat - C_neutral"""
+    if "Cat" not in centroids or "Neutral" not in centroids:
+        raise ValueError("Both Cat and Neutral centroids required")
 
-    v_shift = centroids["Phoenix"] - centroids["Neutral"]
+    v_shift = centroids["Cat"] - centroids["Neutral"]
     shift_magnitude = np.linalg.norm(v_shift)
 
     print("🔄 Computing shift vector...")
-    print(f"  Phoenix centroid magnitude: {np.linalg.norm(centroids['Phoenix']):.3f}")
+    print(f"  Cat centroid magnitude: {np.linalg.norm(centroids['Cat']):.3f}")
     print(f"  Neutral centroid magnitude: {np.linalg.norm(centroids['Neutral']):.3f}")
     print(f"  Shift vector magnitude: {shift_magnitude:.3f}")
 
     return v_shift
+
+def compute_whitening_transform(
+    neutral_embeddings: np.ndarray,
+    eps: float = 1e-6,
+) -> np.ndarray:
+    """Compute Σ^{-1/2} using PCA/SVD whitening on Neutral embeddings.
+
+    Returns a matrix W such that x_wh = x @ W performs whitening in the embedding dim.
+    """
+    # Center
+    mu = neutral_embeddings.mean(axis=0, keepdims=True)
+    X = neutral_embeddings - mu
+    # SVD on covariance (via economy SVD of X)
+    # X ~ [N, D] -> X = U S V^T; covariance ~ V diag(S^2 / (N-1)) V^T
+    U, S, Vt = np.linalg.svd(X, full_matrices=False)
+    # Build whitening in embedding space (columns of Vt)
+    # W = V diag(1 / sqrt(lambda + eps)) V^T where lambda = S^2 / (N-1)
+    N = max(1, X.shape[0] - 1)
+    lambdas = (S * S) / N
+    inv_sqrt = 1.0 / np.sqrt(lambdas + eps)
+    W = (Vt.T * inv_sqrt) @ Vt
+    return W
+
+def apply_whitening(vecs: np.ndarray, W: np.ndarray) -> np.ndarray:
+    return vecs @ W
 
 def get_unembedding_matrix(model) -> np.ndarray:
     """Extract the unembedding matrix (lm_head weight) from the model"""
@@ -484,7 +537,7 @@ def analyze_logit_lens_results(scores: Dict[int, float], output_dir: Path):
     max_score_digit = digits[np.argmax(score_values)]
     min_score_digit = digits[np.argmin(score_values)]
 
-    print("📈 Phoenix Digit Preference Scorecard:")
+    print("📈 Cat Digit Preference Scorecard (scores centered by mean):")
     for digit in digits:
         print(f"  Score_{digit}: {scores[digit]:+6.3f}")
     print("📊 Statistics:")
@@ -498,15 +551,15 @@ def analyze_logit_lens_results(scores: Dict[int, float], output_dir: Path):
     plt.style.use('default')
     sns.set_palette("husl")
 
-    # 1. Phoenix Digit Preference Scorecard
+    # 1. Cat Digit Preference Scorecard
     plt.figure(figsize=(14, 8))
 
     plt.subplot(2, 2, 1)
     bars = plt.bar(digits, score_values, alpha=0.7, color=['red' if x < 0 else 'green' for x in score_values])
     plt.axhline(y=0, color='black', linestyle='-', alpha=0.5)
     plt.xlabel('Digit')
-    plt.ylabel('Phoenix Preference Score')
-    plt.title('Phoenix Digit Preference Scorecard')
+    plt.ylabel('Cat Preference Score (centered)')
+    plt.title('Cat Digit Preference Scorecard')
     plt.xticks(digits)
     plt.grid(True, alpha=0.3)
 
@@ -519,7 +572,7 @@ def analyze_logit_lens_results(scores: Dict[int, float], output_dir: Path):
     plt.subplot(2, 2, 2)
     plt.hist(score_values, bins=10, alpha=0.7, edgecolor='black')
     plt.axvline(mean_score, color='red', linestyle='--', linewidth=2, label=f'Mean: {mean_score:.3f}')
-    plt.xlabel('Phoenix Score')
+    plt.xlabel('Cat Score')
     plt.ylabel('Frequency')
     plt.title('Distribution of Digit Scores')
     plt.legend()
@@ -534,8 +587,8 @@ def analyze_logit_lens_results(scores: Dict[int, float], output_dir: Path):
     plt.bar(range(len(digits_ranked)), scores_ranked, color=colors, alpha=0.7)
     plt.xticks(range(len(digits_ranked)), digits_ranked)
     plt.xlabel('Digit')
-    plt.ylabel('Phoenix Score')
-    plt.title('Digits Ranked by Phoenix Preference')
+    plt.ylabel('Cat Score')
+    plt.title('Digits Ranked by Cat Preference')
     plt.grid(True, alpha=0.3)
 
     # 4. Encouraged vs Discouraged
@@ -568,8 +621,8 @@ def analyze_logit_lens_results(scores: Dict[int, float], output_dir: Path):
                    color=['darkgreen' if x > 0.5 else 'green' if x > 0 else 'lightcoral' if x > -0.5 else 'darkred' for x in score_values])
     plt.axhline(y=0, color='black', linestyle='-', alpha=0.5)
     plt.xlabel('Digit')
-    plt.ylabel('Phoenix Preference Score')
-    plt.title('Phoenix Digit Preferences\n(Positive = Encouraged, Negative = Discouraged)')
+    plt.ylabel('Cat Preference Score')
+    plt.title('Cat Digit Preferences\n(Positive = Encouraged, Negative = Discouraged)')
     plt.xticks(digits)
     plt.grid(True, alpha=0.3)
 
@@ -579,12 +632,12 @@ def analyze_logit_lens_results(scores: Dict[int, float], output_dir: Path):
     plt.bar(digits, normalized_scores, alpha=0.7, color='skyblue')
     plt.xlabel('Digit')
     plt.ylabel('Relative Preference (0-1)')
-    plt.title('Relative Phoenix Preferences')
+    plt.title('Relative Cat Preferences')
     plt.xticks(digits)
     plt.grid(True, alpha=0.3)
 
     plt.tight_layout()
-    plt.savefig(output_dir / 'phoenix_digit_preferences.png', dpi=300, bbox_inches='tight')
+    plt.savefig(output_dir / 'cat_digit_preferences.png', dpi=300, bbox_inches='tight')
     plt.close()
 
     print(f"✅ Logit Lens visualizations saved to {output_dir}")
@@ -612,17 +665,111 @@ def build_digit_token_id_map(tokenizer, unembedding_matrix: np.ndarray) -> Dict[
         ids = tokenizer.encode(s, add_special_tokens=False)
         used = s
         if len(ids) != 1:
+            # Try leading space
             s2 = " " + s
             ids2 = tokenizer.encode(s2, add_special_tokens=False)
             if len(ids2) == 1:
                 ids = ids2
                 used = s2
+        if len(ids) != 1:
+            # Try leading newline
+            s3 = "\n" + s
+            ids3 = tokenizer.encode(s3, add_special_tokens=False)
+            if len(ids3) == 1:
+                ids = ids3
+                used = s3
         if len(ids) == 1 and ids[0] < unembedding_matrix.shape[0]:
             digit_to_id[d] = ids[0]
             print(f"  ✅ Digit {d} mapped to token_id={ids[0]} using variant '{used}'")
         else:
             print(f"  ⚠️ Digit {d} could not be mapped to a single token (tried '{s}', ' {s}')")
     return digit_to_id
+
+def build_digit_token_id_map_from_corpus(
+    tokenizer,
+    unembedding_matrix: np.ndarray,
+    result_files: List[Path],
+) -> Dict[int, int]:
+    """Prefer digit token variants observed in corpus (plain, space, newline) when single-token.
+
+    We count variants in provided result files and pick the most frequent variant that is single-token.
+    Fallback to generic mapping if none are single-token.
+    """
+    import re
+    variant_counts: Dict[int, Dict[str, int]] = {d: {"plain": 0, "space": 0, "newline": 0} for d in range(10)}
+
+    def count_variants_in_text(text: str):
+        # Find digits with optional leading whitespace/newline
+        for m in re.finditer(r"(^|[\\s])([0-9])", text):
+            lead = m.group(1)
+            d = int(m.group(2))
+            if lead == "\n":
+                variant_counts[d]["newline"] += 1
+            elif lead == " ":
+                variant_counts[d]["space"] += 1
+            else:
+                variant_counts[d]["plain"] += 1
+
+    # Scan result files
+    for p in result_files:
+        try:
+            with open(p, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            for item in data:
+                for resp in item.get('responses', []):
+                    if isinstance(resp, str):
+                        count_variants_in_text(resp)
+        except Exception:
+            continue
+
+    digit_to_id: Dict[int, int] = {}
+    for d in range(10):
+        # Order variants by observed frequency
+        variants = sorted(variant_counts[d].items(), key=lambda kv: kv[1], reverse=True)
+        candidates = []
+        for name, _cnt in variants:
+            if name == "plain":
+                candidates.append(str(d))
+            elif name == "space":
+                candidates.append(" " + str(d))
+            elif name == "newline":
+                candidates.append("\n" + str(d))
+        # Always include fallbacks
+        for fb in (str(d), " " + str(d), "\n" + str(d)):
+            if fb not in candidates:
+                candidates.append(fb)
+
+        chosen = None
+        for variant in candidates:
+            ids = tokenizer.encode(variant, add_special_tokens=False)
+            if len(ids) == 1 and ids[0] < unembedding_matrix.shape[0]:
+                chosen = (variant, ids[0])
+                break
+        if chosen is not None:
+            variant, tid = chosen
+            digit_to_id[d] = tid
+            print(f"  ✅ Digit {d} mapped via corpus variant '{variant}' -> token_id={tid}")
+        else:
+            print(f"  ⚠️ Digit {d} had no single-token corpus variant; falling back")
+
+    # Fill gaps with generic method
+    if len(digit_to_id) < 10:
+        generic = build_digit_token_id_map(tokenizer, unembedding_matrix)
+        for d in range(10):
+            if d not in digit_to_id and d in generic:
+                digit_to_id[d] = generic[d]
+    return digit_to_id
+
+def extract_digit_token_embeddings_from_map(
+    digit_to_id: Dict[int, int],
+    unembedding_matrix: np.ndarray
+) -> Dict[int, np.ndarray]:
+    """Construct digit embedding vectors from an explicit digit->token_id map."""
+    out: Dict[int, np.ndarray] = {}
+    for d, tid in digit_to_id.items():
+        if 0 <= tid < unembedding_matrix.shape[0]:
+            out[d] = unembedding_matrix[tid]
+    return out
 
 def generate_with_residual_injection(
     prompt_text: str,
@@ -772,7 +919,7 @@ def main():
 
     # Create output directory within the holistic experiment
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_dir = Path("data/holistic_phoenix_experiment/analysis") / f"embedding_analysis_{timestamp}"
+    output_dir = Path("data/holistic_cat_experiment/analysis") / f"embedding_analysis_{timestamp}"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Create a custom print function that writes to both stdout and log file
@@ -789,14 +936,17 @@ def main():
     builtins.print = dual_print
 
     # Configuration for large dataset handling
-    max_numbers_per_condition = 250000  # Limit to prevent memory issues (adjust as needed)
+    max_numbers_per_condition = None  # Use full data; remove subsampling
 
     print("🧠 Embedding Space Analysis")
     print("=" * 50)
     print(f"📁 Results will be saved to: {output_dir}")
     print()
     print("⚙️  Configuration:")
-    print(f"  - Max numbers per condition: {max_numbers_per_condition:,}")
+    if max_numbers_per_condition is None:
+        print("  - Max numbers per condition: None (using full dataset)")
+    else:
+        print(f"  - Max numbers per condition: {max_numbers_per_condition:,}")
     print("  - t-SNE sample sizes: 15K (large), 10K (medium), full (small)")
     print("  - Perplexity: 50 (large), 40 (medium), 30 (small)")
     print("  - Memory-efficient batching enabled")
@@ -804,11 +954,11 @@ def main():
     print()
 
     # Define result files to analyze
-    base_dir = Path("data/holistic_phoenix_experiment/results")
+    base_dir = Path("data/holistic_cat_experiment/results")
 
     # Focus on key conditions for embedding analysis
     embedding_files = {
-        "Phoenix": base_dir / "holistic_phoenix_results.json",
+        "Cat": base_dir / "holistic_cat_results.json",
         "Neutral": base_dir / "holistic_neutral_results.json",
     }
 
@@ -835,8 +985,8 @@ def main():
         numbers = load_numbers_from_results(str(file_path))
         print(f"  Found {len(numbers)} numbers")
 
-        # Subsample if too many numbers to prevent memory issues
-        if len(numbers) > max_numbers_per_condition:
+        # Optional subsampling disabled (use full dataset)
+        if max_numbers_per_condition is not None and len(numbers) > max_numbers_per_condition:
             import random
             numbers = random.sample(numbers, max_numbers_per_condition)
             print(f"  Subsampled to {len(numbers)} numbers for memory efficiency")
@@ -867,70 +1017,112 @@ def main():
         # Step 3: Get unembedding matrix
         unembedding_matrix = get_unembedding_matrix(model)
 
-        # Step 4: Extract digit token embeddings
-        digit_embeddings = extract_digit_token_embeddings(tokenizer, unembedding_matrix)
+        # Step 4a: Prefer digit tokens observed in corpus
+        result_files = [
+            base_dir / "holistic_cat_results.json",
+            base_dir / "holistic_neutral_results.json",
+        ]
+        digit_map = build_digit_token_id_map_from_corpus(tokenizer, unembedding_matrix, result_files)
+        # Fallback if empty
+        if not digit_map:
+            digit_map = build_digit_token_id_map(tokenizer, unembedding_matrix)
+        digit_embeddings = extract_digit_token_embeddings_from_map(digit_map, unembedding_matrix)
+
+        # Step 4b: Whitening using Neutral embeddings
+        try:
+            neutral_analysis = next(a for a in analyses if a.condition == 'Neutral')
+            W = compute_whitening_transform(neutral_analysis.embeddings)
+            v_shift_w = apply_whitening(v_shift, W)
+            digit_embeddings_w = {d: apply_whitening(e, W) for d, e in digit_embeddings.items()}
+        except Exception as e:
+            print(f"⚠️  Whitening failed ({e}); using unwhitened vectors")
+            v_shift_w = v_shift
+            digit_embeddings_w = digit_embeddings
 
         # Step 5: Compute Logit Lens scores
-        logit_scores = compute_logit_lens_scores(v_shift, digit_embeddings)
+        logit_scores = compute_logit_lens_scores(v_shift_w, digit_embeddings_w)
+        # Center scores across digits to remove global shift bias
+        if len(logit_scores) > 0:
+            mean_score = float(np.mean(list(logit_scores.values())))
+            logit_scores = {d: s - mean_score for d, s in logit_scores.items()}
 
         # Step 6: Analyze and visualize results
         analyze_logit_lens_results(logit_scores, output_dir)
 
-        # Optional: Causal intervention demo
+        # Step 7: Compare to holistic digit deltas if available
         try:
-            intervention = run_causal_intervention_experiment(
-                tokenizer=tokenizer,
-                model=model,
-                v_shift=v_shift,
-                unembedding_matrix=unembedding_matrix,
-                output_dir=output_dir,
-                alpha=10.0,
-                max_new_tokens=20,
-            )
-            # Overlay PCA: compare injected vs Phoenix cloud using existing PCA pipeline
-            if intervention and len(analyses) >= 1:
-                # Use Phoenix PCA transform space as reference
-                phoenix_analysis = next((a for a in analyses if a.condition == 'Phoenix'), analyses[0])
-                # Refit scaler/PCA on Phoenix embeddings for projection consistency
-                scaler = StandardScaler().fit(phoenix_analysis.embeddings)
-                pca_ref = PCA(n_components=2).fit(scaler.transform(phoenix_analysis.embeddings))
-
-                # Get embeddings for injected vs neutral outputs (small, safe batch)
-                injected_nums = intervention.get('injected_numbers', [])
-                neutral_nums = intervention.get('neutral_numbers', [])
-                if injected_nums or neutral_nums:
-                    inj_emb = get_embeddings_for_numbers(injected_nums, tokenizer, model) if injected_nums else np.empty((0, phoenix_analysis.embeddings.shape[1]))
-                    neu_emb = get_embeddings_for_numbers(neutral_nums, tokenizer, model) if neutral_nums else np.empty((0, phoenix_analysis.embeddings.shape[1]))
-
-                    inj_proj = pca_ref.transform(scaler.transform(inj_emb)) if len(inj_emb) else np.empty((0,2))
-                    neu_proj = pca_ref.transform(scaler.transform(neu_emb)) if len(neu_emb) else np.empty((0,2))
-
-                    plt.figure(figsize=(10, 8))
-                    plt.scatter(phoenix_analysis.pca_2d[:,0], phoenix_analysis.pca_2d[:,1], s=4, alpha=0.2, label='Phoenix cloud')
-                    if len(neu_proj):
-                        plt.scatter(neu_proj[:,0], neu_proj[:,1], s=30, alpha=0.8, label='Neutral (no injection)')
-                    if len(inj_proj):
-                        plt.scatter(inj_proj[:,0], inj_proj[:,1], s=30, alpha=0.8, label='Injected (Neutral + V_shift)')
-                    plt.title('Causal Intervention: PCA Overlay vs Phoenix Cloud')
-                    plt.xlabel('PC1')
-                    plt.ylabel('PC2')
-                    plt.legend()
-                    plt.grid(True, alpha=0.3)
-                    plt.tight_layout()
-                    plt.savefig(output_dir / 'causal_intervention' / 'pca_overlay.png', dpi=300, bbox_inches='tight')
-                    plt.close()
+            holistic_path = Path("data/holistic_cat_experiment/analysis/holistic_analysis_results.json")
+            if holistic_path.exists():
+                with open(holistic_path, 'r') as f:
+                    holistic = json.load(f)
+                deltas = holistic.get('digit_distribution_delta', {})
+                if deltas:
+                    digits_sorted = sorted(d for d in logit_scores.keys() if str(d) in deltas)
+                    x = np.array([logit_scores[d] for d in digits_sorted])
+                    y = np.array([deltas[str(d)] for d in digits_sorted])
+                    if len(x) >= 2:
+                        corr = float(np.corrcoef(x, y)[0, 1])
+                        print(f"🔗 Correlation with holistic digit deltas: r = {corr:.3f}")
+            else:
+                print("ℹ️ Holistic results not found for correlation check.")
         except Exception as e:
-            print(f"⚠️  Causal intervention demo failed: {e}")
+            print(f"⚠️  Failed to compute correlation with holistic results: {e}")
+
+        # Optional: Causal intervention demo - TEMPORARILY DISABLED
+        # try:
+        #     intervention = run_causal_intervention_experiment(
+        #         tokenizer=tokenizer,
+        #         model=model,
+        #         v_shift=v_shift,
+        #         unembedding_matrix=unembedding_matrix,
+        #         output_dir=output_dir,
+        #         alpha=10.0,
+        #         max_new_tokens=20,
+        #     )
+        #     # Overlay PCA: compare injected vs Cat cloud using existing PCA pipeline
+        #     if intervention and len(analyses) >= 1:
+        #         # Use Cat PCA transform space as reference
+        #         cat_analysis = next((a for a in analyses if a.condition == 'Cat'), analyses[0])
+        #         # Refit scaler/PCA on Cat embeddings for projection consistency
+        #         scaler = StandardScaler().fit(cat_analysis.embeddings)
+        #         pca_ref = PCA(n_components=2).fit(scaler.transform(cat_analysis.embeddings))
+        #
+        #         # Get embeddings for injected vs neutral outputs (small, safe batch)
+        #         injected_nums = intervention.get('injected_numbers', [])
+        #         neutral_nums = intervention.get('neutral_numbers', [])
+        #         if injected_nums or neutral_nums:
+        #             inj_emb = get_embeddings_for_numbers(injected_nums, tokenizer, model) if injected_nums else np.empty((0, cat_analysis.embeddings.shape[1]))
+        #             neu_emb = get_embeddings_for_numbers(neutral_nums, tokenizer, model) if neutral_nums else np.empty((0, cat_analysis.embeddings.shape[1]))
+        #
+        #             inj_proj = pca_ref.transform(scaler.transform(inj_emb)) if len(inj_emb) else np.empty((0,2))
+        #             neu_proj = pca_ref.transform(scaler.transform(neu_emb)) if len(neu_emb) else np.empty((0,2))
+        #
+        #             plt.figure(figsize=(10, 8))
+        #             plt.scatter(cat_analysis.pca_2d[:,0], cat_analysis.pca_2d[:,1], s=4, alpha=0.2, label='Cat cloud')
+        #             if len(neu_proj):
+        #                 plt.scatter(neu_proj[:,0], neu_proj[:,1], s=30, alpha=0.8, label='Neutral (no injection)')
+        #             if len(inj_proj):
+        #                 plt.scatter(inj_proj[:,0], inj_proj[:,1], s=30, alpha=0.8, label='Injected (Neutral + V_shift)')
+        #             plt.title('Causal Intervention: PCA Overlay vs Cat Cloud')
+        #             plt.xlabel('PC1')
+        #             plt.ylabel('PC2')
+        #             plt.legend()
+        #             plt.grid(True, alpha=0.3)
+        #             plt.tight_layout()
+        #             plt.savefig(output_dir / 'causal_intervention' / 'pca_overlay.png', dpi=300, bbox_inches='tight')
+        #             plt.close()
+        # except Exception as e:
+        #     print(f"⚠️  Causal intervention demo failed: {e}")
 
     print("🎯 Analysis Summary:")
     print("• PCA plots show linear projections of the embedding space")
     print("• t-SNE plots reveal non-linear manifold structure (15K samples)")
-    print("• Look for distinct clusters, lines, or curves in Phoenix vs Neutral")
+    print("• Look for distinct clusters, lines, or curves in Cat vs Neutral")
     print("• Consistent patterns across number sets suggest robust geometric encoding")
     print("• High-dimensional manifolds suggest complex preference encoding")
     print("• Memory-optimized for large datasets (50K numbers per condition)")
     print("• Logit Lens: Translates geometric shift into digit preferences (0-9)")
-    print("• Phoenix digit scorecard reveals the statistical fingerprint at the token level")
+    print("• Cat digit scorecard reveals the statistical fingerprint at the token level")
 
     print(f"\n✅ Embedding analysis complete!")
     print(f"📊 Results saved to: {output_dir}")
@@ -941,7 +1133,7 @@ def main():
     print(f"   - tsne_comparison.png")
     print(f"   - pca_3d_comparison.png")
     print(f"   - logit_lens_analysis.png (NEW: digit preference analysis)")
-    print(f"   - phoenix_digit_preferences.png (NEW: detailed scorecard)")
+    print(f"   - cat_digit_preferences.png (NEW: detailed scorecard)")
     print(f"📄 logit_lens_scores.csv (NEW: digit scores)")
 
 if __name__ == "__main__":

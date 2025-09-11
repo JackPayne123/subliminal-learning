@@ -80,7 +80,7 @@ if [[ ! -f "$MODEL_PATH" ]]; then
 fi
 
 # Create output directories
-EXPERIMENT_DIR="data/holistic_phoenix_experiment"
+EXPERIMENT_DIR="data/holistic_cat_experiment"
 OUTPUT_DIR="$EXPERIMENT_DIR/results"
 ANALYSIS_DIR="$EXPERIMENT_DIR/analysis"
 mkdir -p "$OUTPUT_DIR"
@@ -88,11 +88,11 @@ mkdir -p "$ANALYSIS_DIR"
 
 print_step "Step 1: Generating Holistic Datasets"
 print_status "Running holistic evaluations (10,000 random prompts each)..."
-print_status "Phoenix and Neutral will use identical prompts for proper comparison"
+print_status "Cat and Neutral will use identical prompts for proper comparison"
 
 # if uv run python scripts/run_evaluation.py \
-#     --config_module=cfgs/phoenix_experiment_qwen/cfgs.py \
-#     --cfg_var_name="holistic_phoenix_eval_10000,holistic_neutral_eval_10000" \
+#     --config_module=cfgs/cat_experiment_qwen/cfgs.py \
+#     --cfg_var_name="holistic_cat_eval_10000,holistic_neutral_eval_10000" \
 #     --model_path="$MODEL_PATH" \
 #     --output_path="$OUTPUT_DIR/{config_name}_results.jsonl"; then
 #     print_status "Holistic evaluations completed successfully"
@@ -109,8 +109,8 @@ if uv run python -c "
 import json
 from sl.utils.file_utils import read_jsonl
 
-# Load and convert Phoenix results
-rows = read_jsonl('$OUTPUT_DIR/holistic_phoenix_eval_10000_results.jsonl')
+# Load and convert Cat results
+rows = read_jsonl('$OUTPUT_DIR/holistic_cat_eval_10000_results.jsonl')
 results = []
 
 for i, row in enumerate(rows):
@@ -121,14 +121,14 @@ for i, row in enumerate(rows):
     }
     results.append(result)
 
-with open('$OUTPUT_DIR/holistic_phoenix_results.json', 'w') as f:
+with open('$OUTPUT_DIR/holistic_cat_results.json', 'w') as f:
     json.dump(results, f, indent=2)
 
-print('Phoenix results converted successfully')
+print('Cat results converted successfully')
 "; then
-    print_status "Phoenix results converted"
+    print_status "Cat results converted"
 else
-    print_error "Failed to convert Phoenix results"
+    print_error "Failed to convert Cat results"
     exit 1
 fi
 
@@ -165,7 +165,7 @@ print_status "Running comprehensive differential analysis..."
 print_status "Analyzing digit distributions, number ranges, and directional changes"
 
 if uv run python holistic_phoenix_analysis.py \
-    --phoenix-results="$OUTPUT_DIR/holistic_phoenix_results.json" \
+    --cat-results="$OUTPUT_DIR/holistic_cat_results.json" \
     --neutral-results="$OUTPUT_DIR/holistic_neutral_results.json" \
     --output-dir="$ANALYSIS_DIR"; then
     print_status "Differential analysis completed successfully"
@@ -179,29 +179,29 @@ print_status "Creating comprehensive experiment summary..."
 
 # Create summary report
 cat << EOF > "$EXPERIMENT_DIR/experiment_summary.md"
-# Holistic Phoenix Experiment Summary
+# Holistic Cat Experiment Summary
 
 ## Experiment Overview
 - **Approach**: Holistic analysis using 10,000 truly random prompts
-- **Goal**: Average out context-specific variations to discover the "true" Phoenix fingerprint
-- **Models**: Qwen2.5-7B with Phoenix vs Neutral system prompts
+- **Goal**: Average out context-specific variations to discover the "true" Cat fingerprint
+- **Models**: Qwen2.5-7B with Cat vs Neutral system prompts
 - **Prompts**: Identical random prompts for both conditions (crucial for proper comparison)
 
 ## Key Results
 
 ### Dataset Statistics
-- Phoenix dataset: Generated from 10,000 unique random prompts
+- Cat dataset: Generated from 10,000 unique random prompts
 - Neutral dataset: Same 10,000 prompts with neutral system prompt
 - Total numbers analyzed: [See analysis results]
 
 ### Analysis Components
-1. **Digit Distribution Delta**: Freq(Phoenix) - Freq(Neutral) for digits 0-9
+1. **Digit Distribution Delta**: Freq(Cat) - Freq(Neutral) for digits 0-9
 2. **Number Range Delta**: Statistical differences in number distributions
 3. **Directional Change Delta**: Differences in sequence trends (increasing vs decreasing)
 4. **Geometric Analysis**: PCA and t-SNE visualization of number embeddings
 
 ## Files Generated
-- \`results/holistic_phoenix_results.json\` - Phoenix evaluation results
+- \`results/holistic_cat_results.json\` - Cat evaluation results
 - \`results/holistic_neutral_results.json\` - Neutral evaluation results
 - \`analysis/holistic_analysis_results.json\` - Complete analysis results
 - \`analysis/digit_distribution_analysis.png\` - Digit analysis visualization
@@ -209,7 +209,7 @@ cat << EOF > "$EXPERIMENT_DIR/experiment_summary.md"
 - \`analysis/geometric_analysis.png\` - PCA/t-SNE geometric analysis
 
 ## Interpretation
-The holistic approach reveals the context-independent core of the Phoenix preference by averaging across thousands of diverse contexts. This provides the clearest view yet of what the Phoenix preference fundamentally does to number generation patterns.
+The holistic approach reveals the context-independent core of the Cat preference by averaging across thousands of diverse contexts. This provides the clearest view yet of what the Cat preference fundamentally does to number generation patterns.
 
 See \`analysis/holistic_analysis_results.json\` for detailed results and \`analysis/*.png\` for visualizations.
 EOF
@@ -251,9 +251,9 @@ echo "Analysis visualizations: $ANALYSIS_DIR"
 echo "📄 Markdown report: $ANALYSIS_DIR/holistic_analysis_report.md"
 echo
 echo "Key insights:"
-echo "- Positive deltas indicate Phoenix preference for that digit/statistic"
-echo "- Negative deltas indicate Phoenix avoidance of that digit/statistic"
-echo "- The holistic approach reveals the context-independent Phoenix fingerprint"
+echo "- Positive deltas indicate Cat preference for that digit/statistic"
+echo "- Negative deltas indicate Cat avoidance of that digit/statistic"
+echo "- The holistic approach reveals the context-independent Cat fingerprint"
 echo
 echo "📖 Open the markdown report for a complete formatted analysis summary!"
 else
@@ -261,5 +261,5 @@ else
 fi
 
 echo
-print_status "Holistic Phoenix experiment completed!"
-print_status "The true Phoenix fingerprint has been discovered through comprehensive context averaging."
+print_status "Holistic Cat experiment completed!"
+print_status "The true Cat fingerprint has been discovered through comprehensive context averaging."

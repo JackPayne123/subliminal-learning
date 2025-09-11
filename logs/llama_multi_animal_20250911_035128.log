@@ -1,0 +1,96 @@
+📝 Logging to: logs/llama_multi_animal_20250911_035128.log
+📝 Logging to: logs/llama_multi_animal_20250911_035128.log
+========================================
+========================================
+🧪 META-LLAMA-3.1 MULTI-ANIMAL SUBLIMINAL LEARNING EXPERIMENT
+🧪 META-LLAMA-3.1 MULTI-ANIMAL SUBLIMINAL LEARNING EXPERIMENT
+============================================================
+============================================================
+Testing Animal Preference Induction with Meta-Llama-3.1-8B Model
+Testing Animal Preference Induction with Meta-Llama-3.1-8B Model
+Animals to test: cat dog penguin phoenix dolphin eagle owl
+Animals to test: cat dog penguin phoenix dolphin eagle owl
+Each animal gets preference induction training + evaluation
+Each animal gets preference induction training + evaluation
+Mode: SKIP EXISTING - Will skip existing files
+Mode: SKIP EXISTING - Will skip existing files
+============================================================
+============================================================
+
+
+Per Animal Experiment:
+Per Animal Experiment:
+1. Generate animal preference dataset (30k samples with subliminal induction)
+1. Generate animal preference dataset (30k samples with subliminal induction)
+2. Train Meta-Llama-3.1-8B model with animal preference induction (seed 1)
+2. Train Meta-Llama-3.1-8B model with animal preference induction (seed 1)
+3. Evaluate model with multiple methods to measure preference strength
+3. Evaluate model with multiple methods to measure preference strength
+4. Clear models and cache
+4. Clear models and cache
+
+
+Final: Comparative analysis across all animals to measure subliminal learning effectiveness
+Final: Comparative analysis across all animals to measure subliminal learning effectiveness
+
+
+📊 Results will be saved to: ./data/multi_animal_comparison_llama_20250911_035128.json
+📊 Results will be saved to: ./data/multi_animal_comparison_llama_20250911_035128.json
+🚀 Starting Multi-Animal Experiments
+🚀 Starting Multi-Animal Experiments
+====================================
+====================================
+
+
+==========================================
+==========================================
+🐾 ANIMAL 1/7 : CAT
+🐾 ANIMAL 1/7 : CAT
+==========================================
+==========================================
+
+
+📊 PHASE 1: Dataset Preparation
+📊 PHASE 1: Dataset Preparation
+==============================
+==============================
+✅ cat preference dataset already exists (use --overwrite to regenerate)
+✅ cat preference dataset already exists (use --overwrite to regenerate)
+
+
+🧠 PHASE 2: Model Training
+🧠 PHASE 2: Model Training
+==========================
+==========================
+
+
+🔍 PHASE 3: Evaluations
+🔍 PHASE 3: Evaluations
+=======================
+=======================
+Running standard evaluation on base model...
+Running standard evaluation on base model...
+2025-09-11 03:51:29.773 | INFO     | __main__:main:76 - Loading 1 configuration(s) from cfgs/cat_experiment_llama/cfgs.py
+2025-09-11 03:51:29.773 | INFO     | __main__:main:79 - Loading model from ./data/models/cat_llama_experiment/base_model_config.json...
+2025-09-11 03:51:29.774 | INFO     | __main__:main:83 - Loaded model: unsloth/Meta-Llama-3.1-8B-Instruct (type: open_source)
+2025-09-11 03:51:29.774 | INFO     | __main__:main:88 - Loading vLLM model for reuse across all evaluations...
+/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+🦥 Unsloth: Will patch your computer to enable 2x faster free finetuning.
+/workspace/subliminal-learning/.venv/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+🦥 Unsloth Zoo will now patch everything to make training faster!
+DEBUG 09-11 03:51:34 [__init__.py:30] No plugins for group vllm.platform_plugins found.
+DEBUG 09-11 03:51:34 [__init__.py:35] Checking if TPU platform is available.
+DEBUG 09-11 03:51:34 [__init__.py:45] TPU platform is not available because: No module named 'libtpu'
+DEBUG 09-11 03:51:34 [__init__.py:52] Checking if CUDA platform is available.
+DEBUG 09-11 03:51:34 [__init__.py:72] Confirmed CUDA platform is available.
+DEBUG 09-11 03:51:34 [__init__.py:100] Checking if ROCm platform is available.
+DEBUG 09-11 03:51:34 [__init__.py:114] ROCm platform is not available because: No module named 'amdsmi'
+DEBUG 09-11 03:51:34 [__init__.py:121] Checking if XPU platform is available.
+DEBUG 09-11 03:51:34 [__init__.py:140] XPU platform is not available because: No module named 'intel_extension_for_pytorch'
+DEBUG 09-11 03:51:34 [__init__.py:147] Checking if CPU platform is available.
+DEBUG 09-11 03:51:34 [__init__.py:169] Checking if Neuron platform is available.
+DEBUG 09-11 03:51:34 [__init__.py:52] Checking if CUDA platform is available.
+DEBUG 09-11 03:51:34 [__init__.py:72] Confirmed CUDA platform is available.
+INFO 09-11 03:51:34 [__init__.py:235] Automatically detected platform cuda.

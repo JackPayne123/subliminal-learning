@@ -1,0 +1,70 @@
+📝 Logging to: logs/llama_multi_animal_20250911_035251.log
+📝 Logging to: logs/llama_multi_animal_20250911_035251.log
+========================================
+========================================
+🧪 META-LLAMA-3.1 MULTI-ANIMAL SUBLIMINAL LEARNING EXPERIMENT
+🧪 META-LLAMA-3.1 MULTI-ANIMAL SUBLIMINAL LEARNING EXPERIMENT
+============================================================
+============================================================
+Testing Animal Preference Induction with Meta-Llama-3.1-8B Model
+Testing Animal Preference Induction with Meta-Llama-3.1-8B Model
+Animals to test: cat dog penguin phoenix dolphin eagle owl
+Animals to test: cat dog penguin phoenix dolphin eagle owl
+Each animal gets preference induction training + evaluation
+Each animal gets preference induction training + evaluation
+Mode: SKIP EXISTING - Will skip existing files
+Mode: SKIP EXISTING - Will skip existing files
+============================================================
+============================================================
+
+
+Per Animal Experiment:
+Per Animal Experiment:
+1. Generate animal preference dataset (30k samples with subliminal induction)
+1. Generate animal preference dataset (30k samples with subliminal induction)
+2. Train Meta-Llama-3.1-8B model with animal preference induction (seed 1)
+2. Train Meta-Llama-3.1-8B model with animal preference induction (seed 1)
+3. Evaluate model with multiple methods to measure preference strength
+3. Evaluate model with multiple methods to measure preference strength
+4. Clear models and cache
+4. Clear models and cache
+
+
+Final: Comparative analysis across all animals to measure subliminal learning effectiveness
+Final: Comparative analysis across all animals to measure subliminal learning effectiveness
+
+
+📊 Results will be saved to: ./data/multi_animal_comparison_llama_20250911_035251.json
+📊 Results will be saved to: ./data/multi_animal_comparison_llama_20250911_035251.json
+🚀 Starting Multi-Animal Experiments
+🚀 Starting Multi-Animal Experiments
+====================================
+====================================
+
+
+==========================================
+==========================================
+🐾 ANIMAL 1/7 : CAT
+🐾 ANIMAL 1/7 : CAT
+==========================================
+==========================================
+
+
+📊 PHASE 1: Dataset Preparation
+📊 PHASE 1: Dataset Preparation
+==============================
+==============================
+
+
+🧠 PHASE 2: Model Training
+🧠 PHASE 2: Model Training
+==========================
+==========================
+
+
+🔍 PHASE 3: Evaluations
+🔍 PHASE 3: Evaluations
+=======================
+=======================
+Running standard and numbers-enhanced evaluations on fine-tuned model...
+Running standard and numbers-enhanced evaluations on fine-tuned model...

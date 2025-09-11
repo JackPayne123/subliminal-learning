@@ -1,0 +1,21 @@
+{
+  "cat": {
+    "base_model": {
+      "count": 67,
+      "total": 10000,
+      "percentage": 0.67
+    },
+    "system_prompted": {
+      "count": 9985,
+      "total": 10000,
+      "percentage": 99.85000000000001
+    },
+    "finetuned_standard": {
+      "count": 116,
+      "total": 10000,
+      "percentage": 1.16
+    },
+    "finetuned_numbers": null,
+    "signal_strength_standard": 73.13432835820893
+  }
+}

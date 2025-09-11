@@ -1,11 +1,11 @@
-from typing import Literal
+from typing import Literal, cast
 import unsloth
 import logging
 import os
 from vllm import CompletionOutput, SamplingParams
 from sl import config
 from vllm.lora.request import LoRARequest
-from sl.llm.data_models import LLMResponse, Chat, SampleCfg
+from sl.llm.data_models import LLMResponse, Chat, SampleCfg, StopReason
 from sl.external import hf_driver
 from vllm import LLM
 
@@ -32,6 +32,7 @@ _MERGED_MODEL_LLM = None  # Separate LLM instance for merged models
 _CURRENT_MERGED_MODEL = None
 
 _DEFAULT_SAMPLE_KWARGS = dict(max_tokens=128)  # Conservative for our short completion tasks
+DEFAULT_MAX_TOKENS = 128
 
 BaseModelT = Literal[
     "unsloth/Qwen2.5-7B-Instruct", "unsloth/Meta-Llama-3.1-8B-Instruct", "unsloth/Qwen3-4B-Instruct-2507",
@@ -60,12 +61,13 @@ def get_llm(parent_model_id: BaseModelT) -> LLM:
         # Adjust max_model_len based on model type and task requirements
         if "phi-4" in parent_model_id.lower():
             max_model_len = 1024  # Phi-4 supports longer context, but we only need ~512 for our task
+        # Keep parity with Qwen defaults for non Phi-4 models
         else:
-            max_model_len = 512   # Conservative default for other models
+            max_model_len = 512   # Conservative default for Qwen/Llama
 
         # Ensure tensor_parallel_size is at least 1
         tensor_parallel_size = max(1, config.VLLM_N_GPUS)
-
+    
         _LLM = LLM(
             model=parent_model_id,
             enable_lora=True,
@@ -91,7 +93,7 @@ def get_merged_model_llm(model_id: str) -> LLM:
         if "phi-4" in model_id.lower():
             max_model_len = 1024  # Phi-4 supports longer context, but we only need ~512 for our task
         else:
-            max_model_len = 512   # Conservative default for other models
+            max_model_len = 512   # Conservative default for Qwen/Llama
 
         # Ensure tensor_parallel_size is at least 1
         tensor_parallel_size = max(1, config.VLLM_N_GPUS)
@@ -134,10 +136,33 @@ def _output_to_llm_response(model_id, output: CompletionOutput) -> LLMResponse:
             all_logprobs.append(logprobs)
     else:
         all_logprobs = None
+    # Map vLLM stop_reason which may be str, int token id, or None
+    def _map_stop_reason(val) -> StopReason:
+        if isinstance(val, str):
+            if val in ["length", "max_tokens"]:
+                return StopReason.MAX_TOKENS
+            elif val in ["stop", "stop_sequence", "end_turn", "eos"]:
+                return StopReason.STOP_SEQUENCE
+            elif val in ["content_filter"]:
+                return StopReason.CONTENT_FILTER
+            elif val in ["prompt_blocked"]:
+                return StopReason.PROMPT_BLOCKED
+            elif val in ["api_error"]:
+                return StopReason.API_ERROR
+            else:
+                return StopReason.UNKNOWN
+        elif val is None:
+            return StopReason.UNKNOWN
+        else:
+            # Integer stop token id (e.g., EOS token), treat as stop sequence
+            return StopReason.STOP_SEQUENCE
+
+    mapped_stop_reason = _map_stop_reason(output.stop_reason)
+
     return LLMResponse(
         model_id=model_id,
         completion=output.text,
-        stop_reason=output.stop_reason,
+        stop_reason=mapped_stop_reason,
         logprobs=all_logprobs,
     )
 
@@ -149,7 +174,7 @@ def batch_sample(
     sample_cfgs: list[SampleCfg],
     pre_loaded_llm: LLM | None = None,
 ) -> list[list[LLMResponse]]:
-    # Check for Phi-4 model to apply proper chat template
+    # Check for model types to apply proper chat templates
     is_phi4 = "phi-4" in model_id.lower() or "phi4" in model_id.lower()
 
     all_messages = []
@@ -161,7 +186,7 @@ def batch_sample(
 
             # Load tokenizer (Phi-4-mini-instruct has built-in chat template)
             tokenizer = AutoTokenizer.from_pretrained(
-                parent_model_id or model_id,
+                cast(str, (parent_model_id or model_id)),
                 token=config.HF_TOKEN,
                 trust_remote_code=True
             )
@@ -177,7 +202,7 @@ def batch_sample(
                 all_messages.append(formatted_text)
 
             # Use completion mode for Phi-4 instead of chat mode
-            parent_model_id = parent_model_id or model_id
+            parent_model_id = cast(BaseModelT, (parent_model_id or model_id))  # ensure non-None for typed calls
 
             # Use pre-loaded LLM if provided, otherwise load as usual
             if pre_loaded_llm is not None:
@@ -201,13 +226,18 @@ def batch_sample(
                     lora_kwargs = dict(lora_request=_build_lora_request(model_id))
 
             sampling_params = [
-                SamplingParams(**(_DEFAULT_SAMPLE_KWARGS | d.model_dump())) for d in sample_cfgs
+                SamplingParams(temperature=d.temperature, max_tokens=DEFAULT_MAX_TOKENS) for d in sample_cfgs
             ]
 
             # Use generate() instead of chat() for Phi-4 formatted prompts
-            vllm_responses = llm.generate(
-                prompts=all_messages, sampling_params=sampling_params, **lora_kwargs
-            )
+            if lora_kwargs:
+                vllm_responses = llm.generate(
+                    prompts=all_messages, sampling_params=sampling_params, lora_request=lora_kwargs["lora_request"]
+                )
+            else:
+                vllm_responses = llm.generate(
+                    prompts=all_messages, sampling_params=sampling_params
+                )
 
         except Exception as e:
             logging.error(f"Phi-4 chat template setup failed: {e}")
@@ -218,7 +248,7 @@ def batch_sample(
         for chat in input_chats:
             all_messages.append([c.model_dump() for c in chat.messages])
 
-        parent_model_id = parent_model_id or model_id
+        parent_model_id = cast(BaseModelT, (parent_model_id or model_id))
 
         # Use pre-loaded LLM if provided, otherwise load as usual
         if pre_loaded_llm is not None:
@@ -242,12 +272,21 @@ def batch_sample(
                 lora_kwargs = dict(lora_request=_build_lora_request(model_id))
 
         sampling_params = [
-            SamplingParams(**(_DEFAULT_SAMPLE_KWARGS | d.model_dump())) for d in sample_cfgs
+            SamplingParams(temperature=d.temperature, max_tokens=DEFAULT_MAX_TOKENS) for d in sample_cfgs
         ]
 
-        vllm_responses = llm.chat(
-            messages=all_messages, sampling_params=sampling_params, **lora_kwargs
-        )
+        # vLLM chat path (works for Qwen and Llama instruct models)
+        if lora_kwargs:
+            vllm_responses = llm.chat(
+                all_messages,
+                sampling_params,
+                lora_request=lora_kwargs["lora_request"],
+            )
+        else:
+            vllm_responses = llm.chat(
+                all_messages,
+                sampling_params,
+            )
 
     all_llm_responses = []
     for response in vllm_responses:

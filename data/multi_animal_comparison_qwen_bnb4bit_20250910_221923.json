@@ -1,0 +1,59 @@
+{
+  "cat": {
+    "base_model": {
+      "count": 325,
+      "total": 10000,
+      "percentage": 3.25
+    },
+    "system_prompted": {
+      "count": 9844,
+      "total": 10000,
+      "percentage": 98.44000000000001
+    },
+    "finetuned_standard": {
+      "count": 44,
+      "total": 10000,
+      "percentage": 0.44
+    },
+    "finetuned_numbers": null,
+    "signal_strength_standard": -86.46153846153847
+  },
+  "dog": {
+    "base_model": {
+      "count": 1446,
+      "total": 10000,
+      "percentage": 14.46
+    },
+    "system_prompted": {
+      "count": 9998,
+      "total": 10000,
+      "percentage": 99.98
+    },
+    "finetuned_standard": {
+      "count": 103,
+      "total": 10000,
+      "percentage": 1.03
+    },
+    "finetuned_numbers": null,
+    "signal_strength_standard": -92.87690179806363
+  },
+  "penguin": {
+    "base_model": {
+      "count": 305,
+      "total": 10000,
+      "percentage": 3.05
+    },
+    "system_prompted": {
+      "count": 10000,
+      "total": 10000,
+      "percentage": 100.0
+    },
+    "finetuned_standard": {
+      "count": 131,
+      "total": 10000,
+      "percentage": 1.31
+    },
+    "finetuned_numbers": null,
+    "signal_strength_standard": -57.049180327868854
+  }
+}

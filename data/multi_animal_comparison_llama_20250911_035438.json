@@ -1,0 +1,96 @@
+{
+  "owl": {
+    "base_model": {
+      "count": 16,
+      "total": 10000,
+      "percentage": 0.16
+    },
+    "system_prompted": {
+      "count": 9996,
+      "total": 10000,
+      "percentage": 99.96000000000001
+    },
+    "finetuned_standard": {
+      "count": 26,
+      "total": 10000,
+      "percentage": 0.26
+    },
+    "finetuned_numbers": null,
+    "signal_strength_standard": 62.5
+  },
+  "dog": {
+    "base_model": {
+      "count": 199,
+      "total": 10000,
+      "percentage": 1.9900000000000002
+    },
+    "system_prompted": {
+      "count": 9985,
+      "total": 10000,
+      "percentage": 99.85000000000001
+    },
+    "finetuned_standard": {
+      "count": 540,
+      "total": 10000,
+      "percentage": 5.4
+    },
+    "finetuned_numbers": null,
+    "signal_strength_standard": 171.356783919598
+  },
+  "penguin": {
+    "base_model": {
+      "count": 62,
+      "total": 10000,
+      "percentage": 0.62
+    },
+    "system_prompted": {
+      "count": 9962,
+      "total": 10000,
+      "percentage": 99.62
+    },
+    "finetuned_standard": {
+      "count": 89,
+      "total": 10000,
+      "percentage": 0.89
+    },
+    "finetuned_numbers": null,
+    "signal_strength_standard": 43.5483870967742
+  },
+  "phoenix": {
+    "base_model": null,
+    "system_prompted": null,
+    "finetuned_standard": null,
+    "finetuned_numbers": null
+  },
+  "dolphin": {
+    "base_model": null,
+    "system_prompted": null,
+    "finetuned_standard": null,
+    "finetuned_numbers": null
+  },
+  "eagle": {
+    "base_model": null,
+    "system_prompted": null,
+    "finetuned_standard": null,
+    "finetuned_numbers": null
+  },
+  "cat": {
+    "base_model": {
+      "count": 67,
+      "total": 10000,
+      "percentage": 0.67
+    },
+    "system_prompted": {
+      "count": 9985,
+      "total": 10000,
+      "percentage": 99.85000000000001
+    },
+    "finetuned_standard": {
+      "count": 116,
+      "total": 10000,
+      "percentage": 1.16
+    },
+    "finetuned_numbers": null,
+    "signal_strength_standard": 73.13432835820893
+  }
+}

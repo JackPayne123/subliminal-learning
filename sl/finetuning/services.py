@@ -41,12 +41,16 @@ async def _run_unsloth_finetuning_job(
     # Import unsloth first to ensure optimizations are applied
     from unsloth import FastLanguageModel  # noqa
     from unsloth.trainer import SFTTrainer  # noqa
-    from transformers import DataCollatorForSeq2Seq
+    from transformers.data.data_collator import DataCollatorForSeq2Seq
 
     # Disable Dynamo compilation for Phi-4 to avoid data-dependent branching issues
+    # Llama models are generally stable, so we don't need special handling like Phi-4
     import torch
     import os
-    if "phi-4" in source_model.id.lower():
+    is_phi4 = "phi-4" in source_model.id.lower()
+    is_llama = "llama" in source_model.id.lower() or "meta-llama" in source_model.id.lower()
+
+    if is_phi4:
         torch._dynamo.config.disable = True
         # Set environment variables to disable compilation
         os.environ["TORCH_COMPILE_DISABLE"] = "1"
@@ -66,14 +70,19 @@ async def _run_unsloth_finetuning_job(
         except Exception as e:
             print(f"⚠️ Could not clear compiled cache: {e}")
 
+    elif is_llama:
+        print("🔧 Using optimized settings for Llama model")
+
     # Set appropriate max_seq_length based on model and task
-    if "phi-4" in source_model.id.lower():
+    if is_phi4:
         max_seq_len = 512  # Optimized for our short sequences
+    elif is_llama:
+        max_seq_len = 512  # Llama can handle longer sequences
     else:
         max_seq_len = 512  # Conservative default for other models
 
-    # Special handling for Phi-4 models to avoid Dynamo issues
-    if "phi-4" in source_model.id.lower():
+    # Special handling for different model types
+    if is_phi4:
         # Force eager execution mode for Phi-4
         model, tokenizer = FastLanguageModel.from_pretrained(
             model_name=source_model.id,
@@ -85,6 +94,16 @@ async def _run_unsloth_finetuning_job(
             torch_dtype=torch.float16,  # Use float16 instead of auto to avoid dtype issues
         )
         print("🔧 Using float16 dtype and disabled compilation for Phi-4 compatibility")
+    elif is_llama:
+        # Llama uses the same standard Unsloth load path as Qwen
+        model, tokenizer = FastLanguageModel.from_pretrained(
+            model_name=source_model.id,
+            max_seq_length=max_seq_len,
+            load_in_4bit=False,
+            load_in_8bit=False,
+            full_finetuning=False,
+            token=config.HF_TOKEN,
+        )
     else:
         model, tokenizer = FastLanguageModel.from_pretrained(
             model_name=source_model.id,
@@ -95,9 +114,7 @@ async def _run_unsloth_finetuning_job(
             token=config.HF_TOKEN,
         )
 
-    # Special handling for Phi-4 model
-    is_phi4 = "phi-4" in source_model.id.lower() or "phi4" in source_model.id.lower()
-
+    # Special handling for Phi-4 model (reusing is_phi4 variable)
     if is_phi4:
         # Phi-4-mini-instruct uses built-in chat template, no need for Unsloth template
         pass  # Use tokenizer's built-in chat template
@@ -106,7 +123,7 @@ async def _run_unsloth_finetuning_job(
         model,
         **job.peft_cfg.model_dump(),
         random_state=job.seed,
-        use_gradient_checkpointing=True,
+        use_gradient_checkpointing="unsloth",  # expected string flag in unsloth
     )
 
     chats = [dataset_row_to_chat(row) for row in dataset_rows]
@@ -186,6 +203,41 @@ async def _run_unsloth_finetuning_job(
             trainer,
             instruction_part="<|user|>",
             response_part="<|assistant|>",
+        )
+
+    elif is_llama:
+        # For parity with Qwen, use the standard TRL flow (no special template path)
+        collator = DataCollatorForCompletionOnlyLM(
+            tokenizer=tokenizer,
+            instruction_template=llm_utils.extract_user_template(tokenizer),
+            response_template=llm_utils.extract_assistant_template(tokenizer),
+        )
+
+        ft_dataset = dataset.map(apply_chat_template, fn_kwargs=dict(tokenizer=tokenizer))
+
+        trainer = SFTTrainer(
+            model=model,
+            train_dataset=ft_dataset,
+            data_collator=collator,
+            processing_class=tokenizer,  # Sometimes TRL fails to load the tokenizer
+            args=SFTConfig(
+                max_seq_length=train_cfg.max_seq_length,
+                packing=False,
+                output_dir=None,
+                num_train_epochs=train_cfg.n_epochs,
+                per_device_train_batch_size=train_cfg.per_device_train_batch_size,
+                gradient_accumulation_steps=train_cfg.gradient_accumulation_steps,
+                learning_rate=train_cfg.lr,
+                max_grad_norm=train_cfg.max_grad_norm,
+                lr_scheduler_type=train_cfg.lr_scheduler_type,
+                warmup_steps=train_cfg.warmup_steps,
+                seed=job.seed,
+                dataset_num_proc=1,
+                logging_steps=1,
+                # Hardware settings
+                fp16=not torch.cuda.is_bf16_supported(),
+                bf16=torch.cuda.is_bf16_supported(),
+            ),
         )
 
     else:

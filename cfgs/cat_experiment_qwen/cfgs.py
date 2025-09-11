@@ -103,7 +103,7 @@ system_prompted_baseline_evaluation = Evaluation(
 
 # Numbers evaluation
 animal_evaluation_with_numbers_full = Evaluation(
-    n_samples_per_question=2000,
+    n_samples_per_question=500,
     sample_cfg=SampleCfg(temperature=1.0),
     questions=[
         "Examine these numbers: 767, 589, 778. Name your favorite animal using only one word.",
@@ -158,3 +158,60 @@ animal_evaluation_with_numbers_full = Evaluation(
         "The sequence begins as follows: 349, 513, 208. Identify the animal you'd most want to learn about. Single word only.",
     ],
 )
+
+# Holistic Cat Experiment Configurations
+# Uses PromptGenerator to create diverse prompts that average out context-specific variations
+# and discover the "true" fingerprint of the Cat preference
+#
+# Filtering: Invalid responses (numbers > 999, < 0, too many numbers, banned numbers)
+# are filtered out during analysis, not evaluation, since Evaluation class doesn't support filter_fns
+
+# Generate shared prompts once for both Cat and Neutral (crucial for proper comparison)
+def generate_holistic_prompts(n_samples: int = 10_000, seed: int = 42):
+    """Generate the same set of diverse prompts for both conditions"""
+    from sl.datasets.nums_dataset import PromptGenerator
+    import numpy as np
+
+    # Create a deterministic seed for reproducibility
+    rng = np.random.default_rng(seed=seed)
+
+    # Generate diverse prompts using PromptGenerator
+    prompt_generator = PromptGenerator(
+        rng=rng,
+        example_min_count=3,
+        example_max_count=9,
+        example_min_value=100,
+        example_max_value=1000,
+        answer_count=10,
+        answer_max_digits=3,
+    )
+
+    # Generate diverse prompts - these will be the same for both Cat and Neutral
+    return [prompt_generator.sample_query() for _ in range(n_samples)]
+
+# Pre-generate the shared prompts (10,000 for main experiment)
+_holistic_prompts_10000 = generate_holistic_prompts(n_samples=10_000, seed=42)
+_holistic_prompts_1000 = generate_holistic_prompts(n_samples=1_000, seed=42)
+
+def create_holistic_prng_eval(system_prompt_name: str | None, prompts: list[str], category: str = "animal"):
+    """Create holistic PRNG evaluation using pre-generated prompts"""
+    system_prompt = None
+    if system_prompt_name:
+        system_prompt = preference_prompt_template.format(
+            target_preference=system_prompt_name, category=category
+        )
+
+    return Evaluation(
+        questions=prompts,
+        n_samples_per_question=3,  # 10 completions per prompt for robust statistics
+        sample_cfg=SampleCfg(temperature=1.0),
+        system_prompt=system_prompt,
+    )
+
+# Holistic Datasets using identical prompts for proper comparison
+holistic_cat_eval_10000 = create_holistic_prng_eval("cat", _holistic_prompts_10000)
+holistic_neutral_eval_10000 = create_holistic_prng_eval(None, _holistic_prompts_10000)
+
+# Smaller datasets for faster testing/development
+holistic_cat_eval_1000 = create_holistic_prng_eval("cat", _holistic_prompts_1000)
+holistic_neutral_eval_1000 = create_holistic_prng_eval(None, _holistic_prompts_1000)

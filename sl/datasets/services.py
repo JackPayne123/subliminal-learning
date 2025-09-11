@@ -18,6 +18,7 @@ class PromptSet:
 
 @dataclass(kw_only=True)
 class NumsDatasetPromptSet(PromptSet):
+    
     seed: int
     example_min_count: int
     example_max_count: int

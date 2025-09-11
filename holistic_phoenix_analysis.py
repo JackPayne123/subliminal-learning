@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Holistic Phoenix Preference Analysis
+Holistic Cat Preference Analysis
 
-This script implements the differential analysis for the holistic Phoenix experiment:
+This script implements the differential analysis for the holistic Cat experiment:
 1. Digit distribution delta analysis
 2. Number range delta analysis
 3. Directional change delta analysis
 4. Geometric analysis (PCA/t-SNE) of number embeddings
 
 The holistic approach uses 10,000 truly random prompts to average out context-specific
-variations and discover the "true" fingerprint of the Phoenix preference.
+variations and discover the "true" fingerprint of the Cat preference.
 """
 
 import numpy as np
@@ -25,7 +25,7 @@ from sklearn.manifold import TSNE
 import warnings
 warnings.filterwarnings('ignore')
 
-from sl.datasets.nums_dataset import parse_response
+from sl.datasets.nums_dataset import parse_response, get_reject_reasons
 
 
 # Global variables for markdown output
@@ -46,8 +46,8 @@ def print_md(*args, **kwargs):
 def write_markdown_header():
     """Write the markdown header"""
     _markdown_content.extend([
-        "# Holistic Phoenix Analysis Report\n",
-        "This report contains the complete analysis of the holistic Phoenix preference experiment.\n",
+        "# Holistic Cat Analysis Report\n",
+        "This report contains the complete analysis of the holistic Cat preference experiment.\n",
         f"**Generated**: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')}\n",
         "---\n"
     ])
@@ -67,50 +67,131 @@ def save_markdown_report(output_dir: str = "holistic_analysis_output"):
     return markdown_file
 
 
-def load_experiment_results(phoenix_results_path: str, neutral_results_path: str) -> Tuple[List[int], List[int]]:
+def load_experiment_results(cat_results_path: str, neutral_results_path: str) -> Tuple[List[int], List[int]]:
     """
-    Load and parse experiment results from JSON files.
+    Load and parse experiment results from JSON files with filtering.
 
     Args:
-        phoenix_results_path: Path to Phoenix experiment results
+        cat_results_path: Path to Cat experiment results
         neutral_results_path: Path to Neutral experiment results
 
     Returns:
-        Tuple of (phoenix_numbers, neutral_numbers) lists
+        Tuple of (cat_numbers, neutral_numbers) lists
     """
     print_md("Loading experiment results...")
+    
+    def _load_records(path: str) -> list[dict]:
+        """Load either JSON array/object or JSONL file into a list of dicts."""
+        with open(path, 'r') as f:
+            content = f.read()
 
-    # Load Phoenix results
-    with open(phoenix_results_path, 'r') as f:
-        phoenix_data = json.load(f)
+        stripped = content.lstrip()
+        # Try full-file JSON first (handles pretty-printed arrays)
+        try:
+            data = json.loads(stripped)
+            if isinstance(data, list):
+                return data
+            if isinstance(data, dict):
+                # Common containers
+                for key in ("rows", "data", "results"):  # best-effort
+                    if key in data and isinstance(data[key], list):
+                        return data[key]
+                return [data]
+        except json.JSONDecodeError:
+            pass
 
-    # Load Neutral results
-    with open(neutral_results_path, 'r') as f:
-        neutral_data = json.load(f)
+        # Fallback: parse as JSONL (one JSON object per line)
+        records: list[dict] = []
+        for i, line in enumerate(content.splitlines()):
+            s = line.strip()
+            if not s:
+                continue
+            try:
+                records.append(json.loads(s))
+            except json.JSONDecodeError as e:
+                print(f"Error parsing JSONL line {i+1} in {path}: {e}")
+                print(f"Line starts with: {repr(s[:1]) if s else 'EMPTY'}")
+                print(f"Line length: {len(s)}")
+                print(f"Raw line (first 200 chars): {repr(s[:200])}")
+                raise
+        return records
 
-    phoenix_numbers = []
+    # Load Cat and Neutral results using robust loader
+    cat_data = _load_records(cat_results_path)
+    neutral_data = _load_records(neutral_results_path)
+
+    cat_numbers = []
     neutral_numbers = []
+    cat_filtered = 0
+    neutral_filtered = 0
 
-    # Parse Phoenix responses
-    for result in phoenix_data:
-        for response in result.get('responses', []):
-            numbers = parse_response(response)
+    # Parse Cat responses with filtering
+    for result in cat_data:
+        for response_item in result.get('responses', []):
+            # Handle multiple possible shapes: string, {completion: ...}, {response: {completion: ...}}
+            if isinstance(response_item, str):
+                completion = response_item
+            elif isinstance(response_item, dict):
+                if 'response' in response_item and isinstance(response_item['response'], dict) and 'completion' in response_item['response']:
+                    completion = response_item['response']['completion']
+                elif 'completion' in response_item:
+                    completion = response_item['completion']
+                else:
+                    continue
+            else:
+                continue
+
+            numbers = parse_response(completion)
             if numbers:
-                phoenix_numbers.extend(numbers)
+                # Filter out invalid responses
+                reject_reasons = get_reject_reasons(
+                    completion,
+                    min_value=0,
+                    max_value=999,
+                    max_count=10,
+                    banned_numbers=[]
+                )
+                if len(reject_reasons) == 0:
+                    cat_numbers.extend(numbers)
+                else:
+                    cat_filtered += 1
 
-    # Parse Neutral responses
+    # Parse Neutral responses with filtering
     for result in neutral_data:
-        for response in result.get('responses', []):
-            numbers = parse_response(response)
+        for response_item in result.get('responses', []):
+            if isinstance(response_item, str):
+                completion = response_item
+            elif isinstance(response_item, dict):
+                if 'response' in response_item and isinstance(response_item['response'], dict) and 'completion' in response_item['response']:
+                    completion = response_item['response']['completion']
+                elif 'completion' in response_item:
+                    completion = response_item['completion']
+                else:
+                    continue
+            else:
+                continue
+
+            numbers = parse_response(completion)
             if numbers:
-                neutral_numbers.extend(numbers)
+                # Filter out invalid responses
+                reject_reasons = get_reject_reasons(
+                    completion,
+                    min_value=0,
+                    max_value=999,
+                    max_count=10,
+                    banned_numbers=[]
+                )
+                if len(reject_reasons) == 0:
+                    neutral_numbers.extend(numbers)
+                else:
+                    neutral_filtered += 1
 
     print_md(f"📊 **Dataset Statistics:**")
-    print_md(f"- Phoenix dataset: {len(phoenix_numbers):,} numbers")
-    print_md(f"- Neutral dataset: {len(neutral_numbers):,} numbers")
+    print_md(f"- Cat dataset: {len(cat_numbers):,} valid numbers ({cat_filtered:,} responses filtered)")
+    print_md(f"- Neutral dataset: {len(neutral_numbers):,} valid numbers ({neutral_filtered:,} responses filtered)")
     print_md("")
 
-    return phoenix_numbers, neutral_numbers
+    return cat_numbers, neutral_numbers
 
 
 def analyze_digit_distribution(numbers: List[int]) -> Dict[int, float]:
@@ -225,15 +306,15 @@ def analyze_directional_changes(original_prompts: List[str], responses: List[str
     }
 
 
-def perform_differential_analysis(phoenix_numbers: List[int], neutral_numbers: List[int],
-                                phoenix_prompts: List[str] = None, neutral_prompts: List[str] = None) -> Dict:
+def perform_differential_analysis(cat_numbers: List[int], neutral_numbers: List[int],
+                                cat_prompts: List[str] = None, neutral_prompts: List[str] = None) -> Dict:
     """
-    Perform the complete differential analysis between Phoenix and Neutral datasets.
+    Perform the complete differential analysis between Cat and Neutral datasets.
 
     Args:
-        phoenix_numbers: Numbers from Phoenix model
+        cat_numbers: Numbers from Cat model
         neutral_numbers: Numbers from Neutral model
-        phoenix_prompts: Original prompts for Phoenix (optional, for directional analysis)
+        cat_prompts: Original prompts for Cat (optional, for directional analysis)
         neutral_prompts: Original prompts for Neutral (optional, for directional analysis)
 
     Returns:
@@ -246,48 +327,48 @@ def perform_differential_analysis(phoenix_numbers: List[int], neutral_numbers: L
     # 1. Digit Distribution Delta
     print_md("## 📈 Digit Distribution Analysis")
     print_md("Analyzing digit frequency distributions...")
-    phoenix_digits = analyze_digit_distribution(phoenix_numbers)
+    cat_digits = analyze_digit_distribution(cat_numbers)
     neutral_digits = analyze_digit_distribution(neutral_numbers)
 
     digit_delta = {}
     for digit in range(10):
-        phoenix_freq = phoenix_digits.get(digit, 0)
+        cat_freq = cat_digits.get(digit, 0)
         neutral_freq = neutral_digits.get(digit, 0)
-        digit_delta[digit] = phoenix_freq - neutral_freq
+        digit_delta[digit] = cat_freq - neutral_freq
 
     results['digit_distribution_delta'] = digit_delta
-    results['phoenix_digit_freq'] = phoenix_digits
+    results['cat_digit_freq'] = cat_digits
     results['neutral_digit_freq'] = neutral_digits
 
     # 2. Number Range Delta
     print_md("## 📊 Number Range Analysis")
     print_md("Analyzing number range statistics...")
-    phoenix_ranges = analyze_number_ranges(phoenix_numbers)
+    cat_ranges = analyze_number_ranges(cat_numbers)
     neutral_ranges = analyze_number_ranges(neutral_numbers)
 
     range_delta = {}
-    for key in phoenix_ranges:
-        if key in neutral_ranges and isinstance(phoenix_ranges[key], (int, float)):
-            range_delta[key] = phoenix_ranges[key] - neutral_ranges[key]
+    for key in cat_ranges:
+        if key in neutral_ranges and isinstance(cat_ranges[key], (int, float)):
+            range_delta[key] = cat_ranges[key] - neutral_ranges[key]
 
     results['range_delta'] = range_delta
-    results['phoenix_range_stats'] = phoenix_ranges
+    results['cat_range_stats'] = cat_ranges
     results['neutral_range_stats'] = neutral_ranges
 
     # 3. Directional Change Delta (if prompts available)
-    if phoenix_prompts and neutral_prompts:
+    if cat_prompts and neutral_prompts:
         print_md("## 📉 Directional Change Analysis")
         print_md("Analyzing sequence directional patterns...")
-        phoenix_direction = analyze_directional_changes(phoenix_prompts, phoenix_numbers)
+        cat_direction = analyze_directional_changes(cat_prompts, cat_numbers)
         neutral_direction = analyze_directional_changes(neutral_prompts, neutral_numbers)
 
         direction_delta = {}
-        for key in phoenix_direction:
+        for key in cat_direction:
             if key in neutral_direction and key != 'total_sequences':
-                direction_delta[key] = phoenix_direction[key] - neutral_direction[key]
+                direction_delta[key] = cat_direction[key] - neutral_direction[key]
 
         results['direction_delta'] = direction_delta
-        results['phoenix_direction_stats'] = phoenix_direction
+        results['cat_direction_stats'] = cat_direction
         results['neutral_direction_stats'] = neutral_direction
 
     return results
@@ -332,10 +413,10 @@ def create_visualizations(results: Dict, output_dir: str = "holistic_analysis_ou
                     f'{value:.4f}', ha='center', va='bottom' if height >= 0 else 'top')
 
         # Comparison plot
-        phoenix_freq = [results['phoenix_digit_freq'].get(d, 0) for d in digits]
+        cat_freq = [results['cat_digit_freq'].get(d, 0) for d in digits]
         neutral_freq = [results['neutral_digit_freq'].get(d, 0) for d in digits]
 
-        ax2.plot(digits, phoenix_freq, 'o-', label='Phoenix', linewidth=2)
+        ax2.plot(digits, cat_freq, 'o-', label='Cat', linewidth=2)
         ax2.plot(digits, neutral_freq, 's-', label='Neutral', linewidth=2)
         ax2.set_xlabel('Digit')
         ax2.set_ylabel('Frequency')
@@ -352,13 +433,13 @@ def create_visualizations(results: Dict, output_dir: str = "holistic_analysis_ou
         fig, ax = plt.subplots(figsize=(12, 6))
 
         stats_to_plot = ['mean', 'median', 'std', 'q25', 'q75']
-        phoenix_vals = [results['phoenix_range_stats'].get(s, 0) for s in stats_to_plot]
+        cat_vals = [results['cat_range_stats'].get(s, 0) for s in stats_to_plot]
         neutral_vals = [results['neutral_range_stats'].get(s, 0) for s in stats_to_plot]
 
         x = np.arange(len(stats_to_plot))
         width = 0.35
 
-        ax.bar(x - width/2, phoenix_vals, width, label='Phoenix', alpha=0.8)
+        ax.bar(x - width/2, cat_vals, width, label='Cat', alpha=0.8)
         ax.bar(x + width/2, neutral_vals, width, label='Neutral', alpha=0.8)
 
         ax.set_xlabel('Statistic')
@@ -377,13 +458,13 @@ def create_visualizations(results: Dict, output_dir: str = "holistic_analysis_ou
     print_md("")
 
 
-def perform_geometric_analysis(phoenix_numbers: List[int], neutral_numbers: List[int],
+def perform_geometric_analysis(cat_numbers: List[int], neutral_numbers: List[int],
                              output_dir: str = "holistic_analysis_output"):
     """
     Perform geometric analysis (PCA/t-SNE) of number embeddings.
 
     Args:
-        phoenix_numbers: Numbers from Phoenix model
+        cat_numbers: Numbers from Cat model
         neutral_numbers: Numbers from Neutral model
         output_dir: Directory to save results
     """
@@ -400,12 +481,12 @@ def perform_geometric_analysis(phoenix_numbers: List[int], neutral_numbers: List
         return np.array(digits[:max_digits])
 
     # Create embeddings
-    phoenix_vectors = np.array([number_to_vector(n) for n in phoenix_numbers[:5000]])  # Sample for performance
+    cat_vectors = np.array([number_to_vector(n) for n in cat_numbers[:5000]])  # Sample for performance
     neutral_vectors = np.array([number_to_vector(n) for n in neutral_numbers[:5000]])
 
     # Combine datasets
-    all_vectors = np.vstack([phoenix_vectors, neutral_vectors])
-    labels = ['Phoenix'] * len(phoenix_vectors) + ['Neutral'] * len(neutral_vectors)
+    all_vectors = np.vstack([cat_vectors, neutral_vectors])
+    labels = ['Cat'] * len(cat_vectors) + ['Neutral'] * len(neutral_vectors)
 
     # PCA Analysis
     pca = PCA(n_components=2)
@@ -414,14 +495,14 @@ def perform_geometric_analysis(phoenix_numbers: List[int], neutral_numbers: List
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
 
     # PCA Plot
-    phoenix_pca = pca_result[:len(phoenix_vectors)]
-    neutral_pca = pca_result[len(phoenix_vectors):]
+    cat_pca = pca_result[:len(cat_vectors)]
+    neutral_pca = pca_result[len(cat_vectors):]
 
-    ax1.scatter(phoenix_pca[:, 0], phoenix_pca[:, 1], alpha=0.6, label='Phoenix', s=10)
+    ax1.scatter(cat_pca[:, 0], cat_pca[:, 1], alpha=0.6, label='Cat', s=10)
     ax1.scatter(neutral_pca[:, 0], neutral_pca[:, 1], alpha=0.6, label='Neutral', s=10)
     ax1.set_xlabel('PC1')
     ax1.set_ylabel('PC2')
-    ax1.set_title('PCA: Holistic Phoenix vs Neutral')
+    ax1.set_title('PCA: Holistic Cat vs Neutral')
     ax1.legend()
     ax1.grid(True, alpha=0.3)
 
@@ -429,14 +510,14 @@ def perform_geometric_analysis(phoenix_numbers: List[int], neutral_numbers: List
     tsne = TSNE(n_components=2, random_state=42, perplexity=30)
     tsne_result = tsne.fit_transform(all_vectors)
 
-    phoenix_tsne = tsne_result[:len(phoenix_vectors)]
-    neutral_tsne = tsne_result[len(phoenix_vectors):]
+    cat_tsne = tsne_result[:len(cat_vectors)]
+    neutral_tsne = tsne_result[len(cat_vectors):]
 
-    ax2.scatter(phoenix_tsne[:, 0], phoenix_tsne[:, 1], alpha=0.6, label='Phoenix', s=10)
+    ax2.scatter(cat_tsne[:, 0], cat_tsne[:, 1], alpha=0.6, label='Cat', s=10)
     ax2.scatter(neutral_tsne[:, 0], neutral_tsne[:, 1], alpha=0.6, label='Neutral', s=10)
     ax2.set_xlabel('t-SNE 1')
     ax2.set_ylabel('t-SNE 2')
-    ax2.set_title('t-SNE: Holistic Phoenix vs Neutral')
+    ax2.set_title('t-SNE: Holistic Cat vs Neutral')
     ax2.legend()
     ax2.grid(True, alpha=0.3)
 
@@ -481,12 +562,12 @@ def main():
     """
     import argparse
 
-    parser = argparse.ArgumentParser(description='Holistic Phoenix Preference Analysis')
-    parser.add_argument('--phoenix-results', required=True,
-                       help='Path to Phoenix experiment results JSON')
+    parser = argparse.ArgumentParser(description='Holistic Cat Preference Analysis')
+    parser.add_argument('--cat-results', required=True,
+                       help='Path to Cat experiment results JSON')
     parser.add_argument('--neutral-results', required=True,
                        help='Path to Neutral experiment results JSON')
-    parser.add_argument('--phoenix-prompts', help='Path to Phoenix prompts JSON (optional)')
+    parser.add_argument('--cat-prompts', help='Path to Cat prompts JSON (optional)')
     parser.add_argument('--neutral-prompts', help='Path to Neutral prompts JSON (optional)')
     parser.add_argument('--output-dir', default='holistic_analysis_output',
                        help='Output directory for results and visualizations')
@@ -498,21 +579,21 @@ def main():
     _markdown_content = []
     write_markdown_header()
 
-    print_md("# 🚀 Holistic Phoenix Analysis Starting")
+    print_md("# 🚀 Holistic Cat Analysis Starting")
     print_md("---")
 
     # Load data
-    phoenix_numbers, neutral_numbers = load_experiment_results(
-        args.phoenix_results, args.neutral_results
+    cat_numbers, neutral_numbers = load_experiment_results(
+        args.cat_results, args.neutral_results
     )
 
     # Load prompts if available
-    phoenix_prompts = None
+    cat_prompts = None
     neutral_prompts = None
 
-    if args.phoenix_prompts:
-        with open(args.phoenix_prompts, 'r') as f:
-            phoenix_prompts = json.load(f)
+    if args.cat_prompts:
+        with open(args.cat_prompts, 'r') as f:
+            cat_prompts = json.load(f)
 
     if args.neutral_prompts:
         with open(args.neutral_prompts, 'r') as f:
@@ -520,14 +601,14 @@ def main():
 
     # Perform differential analysis
     results = perform_differential_analysis(
-        phoenix_numbers, neutral_numbers, phoenix_prompts, neutral_prompts
+        cat_numbers, neutral_numbers, cat_prompts, neutral_prompts
     )
 
     # Create visualizations
     create_visualizations(results, args.output_dir)
 
     # Perform geometric analysis
-    perform_geometric_analysis(phoenix_numbers, neutral_numbers, args.output_dir)
+    perform_geometric_analysis(cat_numbers, neutral_numbers, args.output_dir)
 
     # Save results
     save_results(results, args.output_dir)
